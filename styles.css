@@ -214,7 +214,25 @@ html, body {
 .pu-bar  { width: 48px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
 .pu-fill { height: 100%; border-radius: 2px; transition: width 0.3s linear; }
 
-#gameCanvas { display: block; max-width: 800px; width: 100%; aspect-ratio: 800 / 560; }
+/* ============================================================ GAME AREA WRAPPER */
+#game-area {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 800 / 560;
+  touch-action: none;
+}
 
 /* ============================================================ SCORE / COMBO POPUPS */
 #score-popup-container { position: fixed; inset: 0; pointer-events: none; z-index: 40; }
@@ -306,6 +324,61 @@ html, body {
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
 
+/* ============================================================ VIRTUAL JOYSTICK */
+#joystick-zone {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;        /* hidden on desktop */
+  z-index: 20;
+  touch-action: none;
+}
+.is-touch #joystick-zone {
+  pointer-events: auto;        /* active on touch devices */
+}
+
+#joystick-base {
+  position: absolute;
+  width: 112px; height: 112px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.22);
+  opacity: 0;
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+
+#joystick-knob {
+  position: absolute;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.6), rgba(255,107,53,0.8));
+  border: 2px solid rgba(255,255,255,0.5);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* ============================================================ ROTATE PROMPT */
+.rotate-prompt {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--darker);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.5rem;
+  font-size: 1.2rem; font-weight: 700; color: var(--text);
+  text-align: center;
+}
+.rotate-icon {
+  font-size: 3rem;
+  animation: rotateHint 2s ease-in-out infinite;
+}
+@keyframes rotateHint {
+  0%, 100% { transform: rotate(0deg); }
+  40%       { transform: rotate(90deg); }
+  60%       { transform: rotate(90deg); }
+}
+
 /* ============================================================ RESPONSIVE */
 @media (max-width: 600px) {
   .panel { padding: 1.3rem 1.1rem; }
@@ -318,4 +391,29 @@ html, body {
   .hud-goal-bar { width: 80px; }
   .hud-left, .hud-right { min-width: 90px; }
   .level-select-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}
+
+/* ============================================================ TOUCH/MOBILE BODY CLASS OVERRIDES */
+/* Larger tap targets on touch devices */
+.is-touch .btn { min-height: 52px; }
+.is-touch .btn-sm { min-height: 36px; padding: 0.4rem 1rem; }
+.is-touch .hud-btn { min-width: 42px; min-height: 42px; font-size: 1.2rem; }
+
+/* Mobile: compact HUD to leave more room for canvas + joystick */
+.is-mobile #hud {
+  padding: 0.25rem 0.4rem;
+  gap: 0.25rem;
+}
+.is-mobile .hud-item     { font-size: 0.65rem; padding: 0.15rem 0.35rem; }
+.is-mobile .hud-score-num { font-size: 1rem; }
+.is-mobile .hud-goal-bar  { width: 70px; }
+.is-mobile .hud-left, .is-mobile .hud-right { min-width: 80px; }
+.is-mobile .hud-level-name { display: none; }  /* save space */
+
+/* Safe-area insets for notched iPhones */
+body {
+  padding-top:    env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left:   env(safe-area-inset-left);
+  padding-right:  env(safe-area-inset-right);
 }

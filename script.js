@@ -309,7 +309,14 @@ function updatePlayer(dt) {
   if (keys['ArrowUp']    || keys['w'] || keys['W']) dy -= 1;
   if (keys['ArrowDown']  || keys['s'] || keys['S']) dy += 1;
 
-  if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+  // FUTURE_MOBILE — virtual joystick input
+  if (typeof Joystick !== 'undefined' && Joystick.active) {
+    dx += Joystick.dx;
+    dy += Joystick.dy;
+  }
+
+  const dLen = Math.sqrt(dx * dx + dy * dy);
+  if (dLen > 1) { dx /= dLen; dy /= dLen; }
 
   player.knockbackX *= 0.85;
   player.knockbackY *= 0.85;
@@ -466,6 +473,7 @@ function checkCollectibles() {
       }
 
       spawnPickupParticles(c.x, c.y, c.color);
+      haptic(20);  // short buzz on collect
 
       const multLabel = mult > 1 ? ` ×${mult.toFixed(1)}` : '';
       const dblLabel  = PowerupState.double > 0 ? ' 💎' : '';
@@ -525,6 +533,7 @@ function playerHit(hazard) {
 
   Game.shake.timer     = 0.4;
   Game.shake.intensity = 9;
+  haptic([80, 40, 80]);  // double-buzz on hit
 
   Game.lives--;
   Game.livesLostThisLevel++;
@@ -997,8 +1006,9 @@ function drawCourtLines() {
 // PARTICLES
 // ============================================================
 function spawnPickupParticles(x, y, color) {
-  for (let i = 0; i < 8; i++) {
-    const angle = (Math.PI * 2 / 8) * i;
+  const count = (typeof MOBILE_CONFIG !== 'undefined' && MOBILE_CONFIG.isMobile) ? 4 : 8;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i;
     particles.push({
       x, y,
       vx: Math.cos(angle) * (2 + Math.random() * 2),
