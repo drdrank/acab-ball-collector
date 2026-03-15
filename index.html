@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACAB Ball Collector</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ==================== SCREENS ==================== -->
+
+  <!-- START SCREEN -->
+  <div id="screen-start" class="screen active">
+    <div class="start-inner">
+      <img src="always_carry_a_ball.jpg" alt="ACAB Logo" class="logo" />
+      <h1 class="game-title">ACAB Ball Collector</h1>
+      <p class="subtitle">Always Carry A Ball</p>
+      <p class="tagline">Collect balls. Grab smiles. Unlock play.</p>
+      <div class="menu-buttons">
+        <button class="btn btn-primary"    onclick="showScreen('screen-name')">▶ Play</button>
+        <button class="btn btn-secondary"  onclick="showScreen('screen-levelselect')">Select Level</button>
+        <button class="btn btn-secondary"  onclick="showScreen('screen-howto')">How To Play</button>
+        <button class="btn btn-secondary"  onclick="showScreen('screen-unlocks')">Collection</button>
+        <button class="btn btn-secondary"  onclick="showScreen('screen-leaderboard')">Leaderboard</button>
+      </div>
+      <button class="btn-mute" id="muteBtn" onclick="toggleMute()">🔊</button>
+    </div>
+  </div>
+
+  <!-- NAME ENTRY -->
+  <div id="screen-name" class="screen">
+    <div class="panel">
+      <h2>Enter Your Name</h2>
+      <input type="text" id="playerNameInput" class="name-input" maxlength="16" placeholder="Player name..." />
+      <div class="menu-buttons">
+        <button class="btn btn-primary"   onclick="startGame()">Let's Go!</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL SELECT -->
+  <div id="screen-levelselect" class="screen">
+    <div class="panel wide">
+      <h2>Select Level</h2>
+      <div id="level-select-grid" class="level-select-grid"></div>
+      <button class="btn btn-secondary" onclick="showScreen('screen-start')" style="margin-top:1rem">Back</button>
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY -->
+  <div id="screen-howto" class="screen">
+    <div class="panel wide">
+      <h2>How To Play</h2>
+      <div class="howto-grid">
+        <div class="howto-item"><span class="icon">🏀</span><p>Collect <b>basketballs</b> for high points</p></div>
+        <div class="howto-item"><span class="icon">🎾</span><p>Collect <b>tennis balls</b> for medium points</p></div>
+        <div class="howto-item"><span class="icon">⚾</span><p>Collect <b>baseballs</b> for medium-high points</p></div>
+        <div class="howto-item"><span class="icon">😊</span><p><b>Smile tokens</b> = progression + 2-star rating</p></div>
+        <div class="howto-item"><span class="icon">🚪</span><p>Reach the <b>exit gate</b> after all goals are met</p></div>
+        <div class="howto-item"><span class="icon">⭐</span><p>Touch <b>checkpoints</b> to save your respawn spot</p></div>
+        <div class="howto-item"><span class="icon">🛡️</span><p><b>Power-ups</b> spawn each level — grab them!</p></div>
+        <div class="howto-item"><span class="icon">👿</span><p><b>Chasers</b> hunt you when you get close — run!</p></div>
+        <div class="howto-item"><span class="icon">⚙️</span><p><b>Spinners</b> rotate in place — stay out of the arms</p></div>
+        <div class="howto-item"><span class="icon">🌀</span><p><b>Boss</b> appears in later levels — bigger, faster</p></div>
+      </div>
+      <div class="howto-grid" style="margin-top:0.75rem">
+        <div class="howto-item"><span class="icon">⭐</span><p><b>1 star</b> = complete level</p></div>
+        <div class="howto-item"><span class="icon">⭐⭐</span><p><b>2 stars</b> = collect enough smiles</p></div>
+        <div class="howto-item"><span class="icon">⭐⭐⭐</span><p><b>3 stars</b> = no lives lost</p></div>
+        <div class="howto-item"><span class="icon">🔥</span><p><b>Combo</b> by collecting quickly = score multiplier</p></div>
+      </div>
+      <div class="controls-box">
+        <p><b>Move:</b> Arrow Keys or WASD</p>
+        <p><b>Pause:</b> P or Escape</p>
+      </div>
+      <button class="btn btn-primary" onclick="showScreen('screen-start')">Got It!</button>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div id="hud">
+      <!-- Left: level + lives -->
+      <div class="hud-section hud-left">
+        <div class="hud-item hud-level-item">
+          LVL <span id="hud-level-val">1</span>
+          <span class="hud-level-name" id="hud-level-name"></span>
+        </div>
+        <div class="hud-item"><span id="hud-lives-val">❤️❤️❤️</span></div>
+      </div>
+      <!-- Center: score + goal bar + combo -->
+      <div class="hud-section hud-center">
+        <div class="hud-score-row">
+          <span class="hud-score-icon">⭐</span>
+          <span id="hud-score-val" class="hud-score-num">0</span>
+        </div>
+        <div class="hud-goal-wrap">
+          <div class="hud-goal-bar"><div id="hud-goal-fill" class="hud-goal-fill"></div></div>
+          <span id="hud-goal-text" class="hud-goal-text">0/100</span>
+        </div>
+        <div id="hud-combo-badge" class="hud-combo-badge" style="display:none">
+          🔥 <span id="hud-combo-count">0</span> COMBO <span id="hud-combo-mult" class="combo-mult">×1.0</span>
+        </div>
+      </div>
+      <!-- Right: tokens + skin + power-ups -->
+      <div class="hud-section hud-right">
+        <div class="hud-item">😊 <span id="hud-tokens-val">0</span></div>
+        <div class="hud-item hud-ball-item">🏀 <span id="hud-ball-val">Classic</span></div>
+        <div id="powerup-hud" class="powerup-hud"></div>
+      </div>
+      <button class="hud-btn" onclick="pauseGame()">⏸</button>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="score-popup-container"></div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="screen-pause" class="screen overlay">
+    <div class="panel">
+      <h2>Paused</h2>
+      <div class="menu-buttons">
+        <button class="btn btn-primary"   onclick="resumeGame()">Resume</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-unlocks')">Collection</button>
+        <button class="btn btn-danger"    onclick="quitToMenu()">Quit to Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEVEL COMPLETE -->
+  <div id="screen-level-complete" class="screen overlay">
+    <div class="panel celebration">
+      <div class="confetti-container" id="confettiContainer"></div>
+      <h2>Level Complete! 🎉</h2>
+      <!-- Star display -->
+      <div class="star-row" id="lc-star-row">
+        <span id="lc-star-1" class="star-icon">☆</span>
+        <span id="lc-star-2" class="star-icon">☆</span>
+        <span id="lc-star-3" class="star-icon">☆</span>
+      </div>
+      <div class="star-labels">
+        <span>Complete</span><span>Smiles</span><span>No Deaths</span>
+      </div>
+      <div class="level-stats">
+        <p>Score: <b id="lc-score">0</b></p>
+        <p>Smiles: <b id="lc-tokens">0</b></p>
+        <p id="lc-unlock-msg" class="unlock-msg"></p>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn btn-primary" id="nextLevelBtn">Next Level →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="screen-gameover" class="screen overlay">
+    <div class="panel">
+      <h2>💀 Game Over</h2>
+      <div class="level-stats">
+        <p>Score: <b id="go-score">0</b></p>
+        <p>Level reached: <b id="go-level">1</b></p>
+        <p>Smiles: <b id="go-tokens">0</b></p>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn btn-primary"   onclick="restartLevel()">Try Again</button>
+        <button class="btn btn-secondary" onclick="saveScoreAndLeaderboard()">Save Score</button>
+        <button class="btn btn-danger"    onclick="quitToMenu()">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME COMPLETE -->
+  <div id="screen-complete" class="screen">
+    <div class="panel celebration">
+      <div class="confetti-container" id="confettiContainer2"></div>
+      <h2>🏆 All Courts Conquered!</h2>
+      <p class="subtitle">You completed all 10 levels!</p>
+      <div class="level-stats">
+        <p>Final Score: <b id="complete-score">0</b></p>
+        <p>Smiles: <b id="complete-tokens">0</b></p>
+        <p>Total Stars: <b id="complete-stars">0</b> / 30</p>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn btn-primary"   onclick="saveScoreAndLeaderboard()">Save to Leaderboard</button>
+        <button class="btn btn-secondary" onclick="showScreen('screen-unlocks')">View Collection</button>
+        <button class="btn btn-secondary" onclick="quitToMenu()">Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UNLOCKS / COLLECTION -->
+  <div id="screen-unlocks" class="screen">
+    <div class="panel wide">
+      <h2>Ball Collection 🏀</h2>
+      <div id="unlocks-grid" class="unlocks-grid"></div>
+      <div id="equip-msg" class="equip-msg"></div>
+      <button class="btn btn-secondary" onclick="goBackFromUnlocks()">Back</button>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="panel wide">
+      <h2>Leaderboard 🏆</h2>
+      <div id="leaderboard-list" class="leaderboard-list"></div>
+      <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
+    </div>
+  </div>
+
+  <!-- SAVE SCORE -->
+  <div id="screen-savescore" class="screen overlay">
+    <div class="panel">
+      <h2>Save Your Score</h2>
+      <input type="text" id="saveNameInput" class="name-input" maxlength="16" placeholder="Your name..." />
+      <div class="menu-buttons">
+        <button class="btn btn-primary"   onclick="confirmSaveScore()">Save</button>
+        <button class="btn btn-secondary" onclick="quitToMenu()">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCRIPTS ==================== -->
+  <script src="config.js"></script>
+  <script src="audio.js"></script>
+  <script src="progress.js"></script>
+  <script src="powerups.js"></script>
+  <script src="unlocks.js"></script>
+  <script src="leaderboard.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
