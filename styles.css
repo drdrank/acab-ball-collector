@@ -154,7 +154,7 @@ html, body {
 .controls-box { background: rgba(78,205,196,0.1); border: 1px solid rgba(78,205,196,0.25); border-radius: 10px; padding: 0.7rem 1rem; margin-bottom: 1rem; font-size: 0.88rem; line-height: 1.8; }
 
 /* ============================================================ GAME SCREEN & HUD */
-#screen-game { flex-direction: column; background: var(--darker); display: none; }
+#screen-game { flex-direction: column; background: var(--darker); display: none; overflow: hidden; }
 #screen-game.active { display: flex; }
 
 #hud {
@@ -220,8 +220,9 @@ html, body {
   width: 100%;
   max-width: 800px;
   flex: 1;
+  min-height: 0;           /* lets flex child shrink below content size */
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   overflow: hidden;
 }
@@ -230,6 +231,7 @@ html, body {
   display: block;
   width: 100%;
   max-width: 800px;
+  max-height: 100%;        /* constrain by height on landscape mobile */
   aspect-ratio: 800 / 560;
   touch-action: none;
 }
