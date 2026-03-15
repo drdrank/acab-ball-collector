@@ -167,29 +167,10 @@ function initVisibilityPause() {
 }
 
 // ============================================================
-// ROTATE PROMPT
-// ============================================================
-function initRotatePrompt() {
-  const prompt = document.getElementById('rotate-prompt');
-  if (!prompt) return;
-
-  function check() {
-    // Show prompt only on small phones in portrait mode
-    const isPortrait = window.innerHeight > window.innerWidth;
-    const isSmall    = Math.min(window.innerWidth, window.innerHeight) < 500;
-    prompt.style.display = (MOBILE_CONFIG.isMobile && isPortrait && isSmall) ? 'flex' : 'none';
-  }
-
-  window.addEventListener('resize', check);
-  check();
-}
-
-// ============================================================
 // BOOTSTRAP — runs after all scripts are loaded
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
   initMobileControls();
   initTouchPrevention();
   initVisibilityPause();
-  initRotatePrompt();
 });
