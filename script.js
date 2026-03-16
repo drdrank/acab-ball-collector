@@ -30,6 +30,9 @@ const Game = {
   livesLostThisLevel: 0,
   goalsMet: false,
 
+  // Speed timer
+  levelTimer: 0,
+
   // Frame timing
   lastTime: 0,
   animId:   null,
@@ -155,6 +158,7 @@ function loadLevel(levelNum) {
   Game.goalsMet           = false;
   Game.livesLostThisLevel = 0;
   Game.shake.timer        = 0;
+  Game.levelTimer         = 0;
 
   // Build walls
   lvl.walls.forEach(w => walls.push({
@@ -253,8 +257,12 @@ function gameLoop(timestamp) {
 }
 
 function update(dt) {
+  Game.levelTimer += dt;
   updatePlayer(dt);
   updateHazards(dt);
+  // Update HUD every frame so the timer ticks smoothly
+  const timerEl = document.getElementById('hud-timer');
+  if (timerEl) timerEl.textContent = '⏱ ' + _formatTime(Game.levelTimer);
   updateParticles(dt);
   updateShake(dt);
   updatePowerupTimers(dt);
@@ -602,6 +610,15 @@ function levelComplete() {
   Game.paused = true;
   Audio.play('level');
 
+  // Speed bonus: par time scales with level; bonus up to level×500 pts
+  const parTime   = 30 + Game.level * 15;  // level 1 = 45s … level 10 = 180s
+  const timePct   = Math.max(0, 1 - Game.levelTimer / parTime);
+  const timeBonus = Math.round(Game.level * 500 * timePct);
+  if (timeBonus > 0) {
+    Game.score += timeBonus;
+    addToTotalScore(timeBonus);
+  }
+
   // Stars
   const stars = calculateStars();
   Progress.setStars(Game.level, stars);
@@ -620,6 +637,8 @@ function levelComplete() {
 
   document.getElementById('lc-score').textContent      = Game.score;
   document.getElementById('lc-tokens').textContent     = Game.tokens;
+  document.getElementById('lc-time').textContent       = _formatTime(Game.levelTimer);
+  document.getElementById('lc-time-bonus').textContent = timeBonus > 0 ? `+${timeBonus} pts` : 'No bonus';
   document.getElementById('lc-unlock-msg').textContent = unlockMsg;
 
   // Animate stars
@@ -1121,9 +1140,19 @@ function updateHUD() {
     }
   }
 
+  // Timer
+  const timerEl = document.getElementById('hud-timer');
+  if (timerEl) timerEl.textContent = '⏱ ' + _formatTime(Game.levelTimer);
+
   // Ball skin
   const skin = getEquippedSkin();
   document.getElementById('hud-ball-val').textContent = skin.name;
+}
+
+function _formatTime(s) {
+  const m   = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m > 0 ? `${m}m ${sec}s` : `${sec}s`;
 }
 
 // ============================================================

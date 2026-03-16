@@ -183,6 +183,7 @@ html, body {
 .hud-goal-bar  { height: 5px; width: 120px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
 .hud-goal-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 3px; transition: width 0.3s ease; }
 .hud-goal-text { font-size: 0.68rem; color: var(--muted); white-space: nowrap; }
+.hud-timer     { font-size: 0.68rem; color: var(--accent); white-space: nowrap; margin-left: 0.4rem; font-weight: 700; }
 
 .hud-combo-badge {
   display: flex; align-items: center; gap: 0.3rem;
@@ -284,7 +285,8 @@ html, body {
 
 /* ============================================================ LEVEL STATS */
 .level-stats { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 0.9rem 1rem; margin: 0.75rem 0; line-height: 2; font-size: 1rem; }
-.unlock-msg { color: var(--secondary); font-weight: 700; font-size: 0.9rem; margin-top: 0.2rem; }
+.unlock-msg       { color: var(--secondary); font-weight: 700; font-size: 0.9rem; margin-top: 0.2rem; }
+.speed-bonus-val  { color: #4ECDC4; }
 
 /* ============================================================ CONFETTI */
 .celebration { overflow: hidden; }
