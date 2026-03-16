@@ -1,68 +1,52 @@
 // ============================================================
 // WALLET.JS — Pera Wallet Connect
-// The SDK is loaded as an ES module in index.html and exposed
-// as window.PeraWalletConnect once ready.
 // ============================================================
 
-let peraWallet   = null;   // single persistent instance
-let _sdkLoaded   = false;  // true once pera-sdk-ready fires
+let peraWallet = null;
+let _sdkReady  = false;
 
-// ---- Wait for the module script to finish ----------------
+// ---- SDK becomes ready when module script fires event ----
 window.addEventListener('pera-sdk-ready', () => {
-  _sdkLoaded = true;
-  // If SDK loaded successfully, try to restore a previous session
-  if (window.PeraWalletConnect) {
-    _getInstance();   // create instance eagerly
-    peraWallet.reconnectSession()
-      .then(accounts => {
-        if (accounts && accounts.length > 0) _onConnected(accounts[0]);
-      })
-      .catch(() => {}); // no saved session — not an error
-  }
-});
+  _sdkReady = true;
+  if (!window.PeraWalletConnect) return;
 
-// ---- Create instance once --------------------------------
-function _getInstance() {
-  if (peraWallet) return peraWallet;
-  if (!window.PeraWalletConnect) return null;
-  peraWallet = new window.PeraWalletConnect();
-  return peraWallet;
-}
-
-// ---- Wait for SDK (up to 8s) then connect ---------------
-async function _waitForSDK() {
-  if (_sdkLoaded) return !!window.PeraWalletConnect;
-  return new Promise(resolve => {
-    const timer = setTimeout(() => resolve(false), 8000);
-    window.addEventListener('pera-sdk-ready', () => {
-      clearTimeout(timer);
-      resolve(!!window.PeraWalletConnect);
-    }, { once: true });
-  });
-}
-
-// ---- Connect wallet (called from button) -----------------
-async function connectWallet() {
-  _clearWalletError();
-
-  const ready = await _waitForSDK();
-  if (!ready) {
-    _showWalletError('Pera Wallet failed to load. Check your connection and refresh.');
+  // Create single persistent instance
+  try {
+    peraWallet = new window.PeraWalletConnect();
+  } catch (e) {
+    console.warn('[Wallet] init failed:', e);
     return;
   }
 
-  const pera = _getInstance();
-  if (!pera) return;
+  // Try to restore previous session silently
+  peraWallet.reconnectSession()
+    .then(accounts => {
+      if (accounts && accounts.length > 0) _onConnected(accounts[0]);
+    })
+    .catch(() => {});
+});
+
+// ---- Connect (called from button) ------------------------
+async function connectWallet() {
+  // If SDK not ready yet, wait up to 8s
+  if (!_sdkReady) {
+    await new Promise(resolve => {
+      const t = setTimeout(resolve, 8000);
+      window.addEventListener('pera-sdk-ready', () => { clearTimeout(t); resolve(); }, { once: true });
+    });
+  }
+
+  if (!peraWallet) {
+    console.warn('[Wallet] SDK not available');
+    return;
+  }
 
   try {
-    const accounts = await pera.connect();
+    const accounts = await peraWallet.connect();
     if (accounts && accounts.length > 0) _onConnected(accounts[0]);
-  } catch (error) {
-    const msg = (error?.message || '').toLowerCase();
-    if (!msg.includes('closed') && !msg.includes('cancel') && !msg.includes('reject')) {
-      _showWalletError('Connection failed. Please try again.');
-      console.error('[Wallet] connect error:', error);
-    }
+  } catch (e) {
+    // User closed the modal — not an error worth showing
+    console.warn('[Wallet] connect cancelled or failed:', e?.message);
   }
 }
 
@@ -76,10 +60,9 @@ async function disconnectWallet() {
 
 // ---- State handlers -------------------------------------
 function _onConnected(address) {
-  _clearWalletError();
   window._walletAddress = address;
-
   const short = _short(address);
+
   document.querySelectorAll('.btn-wallet-connect').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.wallet-pill').forEach(el => el.style.display = '');
   document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = short);
@@ -107,19 +90,6 @@ function _onDisconnected() {
   document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = '');
 }
 
-function _showWalletError(msg) {
-  document.querySelectorAll('.wallet-error').forEach(el => {
-    el.textContent = msg; el.style.display = '';
-  });
-  console.warn('[Wallet]', msg);
-}
-
-function _clearWalletError() {
-  document.querySelectorAll('.wallet-error').forEach(el => {
-    el.textContent = ''; el.style.display = 'none';
-  });
-}
-
 function _short(addr) {
   if (!addr || addr.length < 8) return addr || '';
   return addr.slice(0, 5) + '...' + addr.slice(-4);
@@ -129,9 +99,9 @@ function _short(addr) {
 const Wallet = {
   _name: null,
 
-  isConnected()    { return !!window._walletAddress; },
-  getAddress()     { return window._walletAddress || null; },
-  getShortAddress: _short,
+  isConnected()         { return !!window._walletAddress; },
+  getAddress()          { return window._walletAddress || null; },
+  getShortAddress(addr) { return _short(addr); },
 
   getDisplayName() {
     if (this._name) return this._name;
@@ -147,5 +117,5 @@ const Wallet = {
 
   connectWallet:    connectWallet,
   disconnectWallet: disconnectWallet,
-  reconnectSession: () => Promise.resolve(null), // handled via pera-sdk-ready event
+  reconnectSession: () => Promise.resolve(null),
 };

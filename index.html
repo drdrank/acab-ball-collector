@@ -29,7 +29,6 @@
           <span class="wallet-addr"></span>
           <button class="btn-wallet-x" onclick="disconnectWallet()" title="Disconnect">✕</button>
         </div>
-        <div class="wallet-error" style="display:none"></div>
       </div>
 
       <div class="menu-buttons">
@@ -295,10 +294,11 @@
   <!-- Pera Wallet: loaded as ES module, exposed as window.PeraWalletConnect -->
   <script type="module">
     try {
-      const { PeraWalletConnect } = await import('https://esm.sh/@perawallet/connect');
-      window.PeraWalletConnect = PeraWalletConnect;
+      const mod = await import('https://esm.sh/@perawallet/connect');
+      // Handle both named export and default export
+      window.PeraWalletConnect = mod.PeraWalletConnect || mod.default;
     } catch (e) {
-      console.error('[Pera] Failed to load SDK:', e);
+      console.warn('[Pera] SDK load error:', e);
     } finally {
       window.dispatchEvent(new CustomEvent('pera-sdk-ready'));
     }
