@@ -442,6 +442,7 @@ body {
   line-height: 1;
 }
 .btn-wallet-x:hover { color: var(--text); }
+.wallet-error { font-size: 0.78rem; color: #ff6b6b; text-align: center; margin-top: 0.2rem; }
 
 /* ============================================================ ONLINE SUBMIT BUTTON */
 .btn-online {

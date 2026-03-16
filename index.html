@@ -23,13 +23,13 @@
 
       <!-- Wallet status row -->
       <div class="wallet-row">
-        <button class="btn-wallet-connect" onclick="connectWalletUI()">🔗 Connect Wallet</button>
+        <button class="btn-wallet-connect" onclick="connectWallet()">🔗 Connect Wallet</button>
         <div class="wallet-pill" style="display:none">
           <span class="wallet-dot">●</span>
           <span class="wallet-addr"></span>
-          <span class="wallet-label"></span>
-          <button class="btn-wallet-x" onclick="disconnectWalletUI()" title="Disconnect">✕</button>
+          <button class="btn-wallet-x" onclick="disconnectWallet()" title="Disconnect">✕</button>
         </div>
+        <div class="wallet-error" style="display:none"></div>
       </div>
 
       <div class="menu-buttons">
@@ -291,7 +291,7 @@
   <!-- ==================== SCRIPTS ==================== -->
   <!-- CDN: Supabase + Pera Wallet -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/@perawallet/connect/dist/umd/index.umd.min.js"></script>
+  <script src="https://unpkg.com/@perawallet/connect@1/dist/umd/index.umd.min.js"></script>
 
   <!-- Config & env (no deps) -->
   <script src="env.js"></script>
