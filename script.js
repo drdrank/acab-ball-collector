@@ -217,8 +217,7 @@ function loadLevel(levelNum) {
 
 function spawnCollectibles(lvl) {
   const padding = 55;
-  ['basketball', 'tennis', 'baseball', 'smile'].forEach(type => {
-    const count = (lvl.ballCounts[type] || 0);
+  Object.entries(lvl.ballCounts).forEach(([type, count]) => {
     for (let i = 0; i < count; i++) {
       let x, y, safe = false, attempts = 0;
       do {
@@ -517,6 +516,9 @@ function checkHazards() {
         Game.shake.intensity = 4;
         Audio.play('hit');
         showScorePopup(player.x, player.y - 24, '🛡️ Shield blocked!');
+        // Burst of teal shield particles
+        spawnPickupParticles(player.x, player.y, '#4ECDC4');
+        spawnPickupParticles(player.x, player.y, '#FFFFFF');
         return;
       }
       playerHit(h);
@@ -1017,19 +1019,24 @@ function drawCourtLines(paintColor) {
   ctx.save();
 
   // ── Hardwood floor ──────────────────────────────────────────
-  ctx.fillStyle = '#C8893A';
+  // Dark base, then lighter planks
+  ctx.fillStyle = '#A0611A';
   ctx.fillRect(0, 0, W, H);
-
-  // Subtle wood-plank grain lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-  ctx.lineWidth = 1;
-  for (let y = 8; y < H; y += 18) {
-    ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
+  // Light plank strips alternating
+  for (let y = 0; y < H; y += 18) {
+    ctx.fillStyle = (Math.floor(y / 18) % 2 === 0) ? 'rgba(255,200,100,0.22)' : 'rgba(0,0,0,0.04)';
+    ctx.fillRect(0, y, W, 18);
+  }
+  // Subtle grain lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+  ctx.lineWidth = 0.8;
+  for (let y = 18; y < H; y += 18) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 
   // ── Paint areas (key / lane) ─────────────────────────────────
   // Use the level's accent colour so each court feels unique
-  ctx.fillStyle = paintColor ? paintColor + '55' : 'rgba(180,60,30,0.32)';
+  ctx.fillStyle = paintColor ? paintColor + '88' : 'rgba(180,60,30,0.50)';
   ctx.fillRect(40,  215, 150, 130);   // left key
   ctx.fillRect(610, 215, 150, 130);   // right key
 
