@@ -895,7 +895,7 @@ function drawExitGate(now) {
     ctx.font = '22px serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.shadowBlur = 0;
-    ctx.fillText('🚪', 0, 0);
+    ctx.fillText('🪣', 0, 0);
   } else {
     // Closed: dim
     ctx.beginPath();
@@ -907,7 +907,7 @@ function drawExitGate(now) {
     ctx.font = '18px serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(200,200,200,0.6)';
-    ctx.fillText('🔒', 0, 0);
+    ctx.fillText('🪣', 0, 0);
   }
   ctx.restore();
 }

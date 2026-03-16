@@ -25,24 +25,48 @@ const Audio = (() => {
 
       switch (type) {
 
-        case 'collect':
+        case 'collect': {
+          // Basketball bounce thud — low thump then pitch rises
+          const o2 = c.createOscillator(); const g2 = c.createGain();
+          o2.connect(g2); g2.connect(c.destination);
+          o2.type = 'sine';
+          o2.frequency.setValueAtTime(160, now);
+          o2.frequency.exponentialRampToValueAtTime(80, now + 0.09);
+          g2.gain.setValueAtTime(0.45, now);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          o2.start(now); o2.stop(now + 0.12);
+          // High collect ping on top
           o.type = 'sine';
-          o.frequency.setValueAtTime(520, now);
-          o.frequency.exponentialRampToValueAtTime(880, now + 0.12);
-          g.gain.setValueAtTime(0.22, now);
-          g.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-          o.start(now); o.stop(now + 0.18);
+          o.frequency.setValueAtTime(520, now + 0.04);
+          o.frequency.exponentialRampToValueAtTime(880, now + 0.16);
+          g.gain.setValueAtTime(0.18, now + 0.04);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          o.start(now + 0.04); o.stop(now + 0.22);
           break;
+        }
 
-        case 'smile':
+        case 'smile': {
+          // Net swish micro-burst for smile token
+          const sbuf = c.createBuffer(1, c.sampleRate * 0.18, c.sampleRate);
+          const sd   = sbuf.getChannelData(0);
+          for (let i = 0; i < sd.length; i++) sd[i] = (Math.random() * 2 - 1);
+          const ss = c.createBufferSource(); ss.buffer = sbuf;
+          const sf = c.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 4000; sf.Q.value = 1.5;
+          const sg = c.createGain();
+          sg.gain.setValueAtTime(0.22, now);
+          sg.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          ss.connect(sf); sf.connect(sg); sg.connect(c.destination);
+          ss.start(now); ss.stop(now + 0.18);
+          // Happy jingle on top
           o.type = 'triangle';
           o.frequency.setValueAtTime(660, now);
           o.frequency.setValueAtTime(880, now + 0.07);
           o.frequency.setValueAtTime(1100, now + 0.14);
-          g.gain.setValueAtTime(0.28, now);
+          g.gain.setValueAtTime(0.24, now);
           g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
           o.start(now); o.stop(now + 0.25);
           break;
+        }
 
         case 'hit':
           o.type = 'sawtooth';
@@ -97,14 +121,31 @@ const Audio = (() => {
           o.start(now); o.stop(now + 0.28);
           break;
 
-        case 'gate':   // exit gate opens
+        case 'gate': {  // exit gate opens — net swish sound
+          // Crowd "swish" — quick filtered noise burst
+          const buf  = c.createBuffer(1, c.sampleRate * 0.35, c.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+          const src  = c.createBufferSource();
+          src.buffer = buf;
+          const bpf  = c.createBiquadFilter();
+          bpf.type            = 'bandpass';
+          bpf.frequency.value = 3200;
+          bpf.Q.value         = 1.2;
+          const swishGain = c.createGain();
+          swishGain.gain.setValueAtTime(0.28, now);
+          swishGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          src.connect(bpf); bpf.connect(swishGain); swishGain.connect(c.destination);
+          src.start(now); src.stop(now + 0.35);
+          // Rising tone underneath
           o.type = 'sine';
           o.frequency.setValueAtTime(300, now);
           o.frequency.exponentialRampToValueAtTime(900, now + 0.3);
-          g.gain.setValueAtTime(0.3, now);
+          g.gain.setValueAtTime(0.2, now);
           g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
           o.start(now); o.stop(now + 0.4);
           break;
+        }
 
         case 'checkpoint':
           o.type = 'sine';
