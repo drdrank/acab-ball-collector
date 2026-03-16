@@ -1,34 +1,45 @@
 // ============================================================
 // WALLET.JS — Pera Wallet connection
 // ============================================================
-// Uses @perawallet/connect loaded via CDN as window.PeraWalletConnect
-// Falls back gracefully if the library is unavailable.
+// Pera Wallet is loaded on-demand via dynamic import() from
+// esm.sh — no CDN script tag needed, works in any browser.
 // ============================================================
 
 const Wallet = (() => {
   let _pera    = null;
+  let _PeraCls = null;
   let _address = null;
-  let _name    = null;    // display name (from DB or user-set)
+  let _name    = null;
 
-  // ---- Init -----------------------------------------------
-  function _initPera() {
+  // ---- Load Pera Wallet library on first use ---------------
+  async function _loadPera() {
+    if (_PeraCls) return _PeraCls;
+    try {
+      const mod = await import('https://esm.sh/@perawallet/connect');
+      _PeraCls  = mod.default || mod.PeraWalletConnect || mod;
+      return _PeraCls;
+    } catch (e) {
+      console.warn('[Wallet] Could not load @perawallet/connect:', e);
+      return null;
+    }
+  }
+
+  async function _getPera() {
     if (_pera) return _pera;
-    const Cls = (typeof PeraWalletConnect !== 'undefined')
-      ? (PeraWalletConnect.default || PeraWalletConnect)
-      : null;
-    if (!Cls) { console.warn('[Wallet] PeraWalletConnect not loaded'); return null; }
+    const Cls = await _loadPera();
+    if (!Cls) return null;
     try {
       _pera = new Cls({ shouldShowSignTxnToast: false });
       return _pera;
     } catch (e) {
-      console.warn('[Wallet] Pera init error:', e);
+      console.warn('[Wallet] PeraWalletConnect init error:', e);
       return null;
     }
   }
 
   // ---- Session restore on page load -----------------------
   async function reconnectSession() {
-    const pera = _initPera();
+    const pera = await _getPera();
     if (!pera) return null;
     try {
       const accounts = await pera.reconnectSession();
@@ -42,8 +53,11 @@ const Wallet = (() => {
 
   // ---- Connect wallet -------------------------------------
   async function connectWallet() {
-    const pera = _initPera();
-    if (!pera) { alert('Pera Wallet library not loaded. Check your internet connection.'); return null; }
+    const pera = await _getPera();
+    if (!pera) {
+      alert('Could not load Pera Wallet.\nMake sure you have an internet connection and try again.');
+      return null;
+    }
     try {
       const accounts = await pera.connect();
       if (accounts && accounts[0]) {
@@ -52,7 +66,9 @@ const Wallet = (() => {
         return _address;
       }
     } catch (e) {
-      if (!e.message?.includes('Modal closed') && !e.message?.includes('cancelled')) {
+      // User closed modal — not an error worth alerting
+      const msg = e?.message || '';
+      if (!msg.includes('closed') && !msg.includes('cancelled') && !msg.includes('rejected')) {
         console.warn('[Wallet] connect error:', e);
       }
     }
@@ -64,15 +80,15 @@ const Wallet = (() => {
     if (_pera) {
       try { await _pera.disconnect(); } catch (e) {}
     }
+    _pera    = null;   // force re-init on next connect
     _address = null;
     _name    = null;
     _updateUI();
   }
 
-  // ---- Internal helpers -----------------------------------
+  // ---- Internal -------------------------------------------
   async function _setAddress(addr) {
     _address = addr;
-    // Try to load saved display name
     const local = localStorage.getItem('acab_wallet_name_' + addr);
     if (local) {
       _name = local;
@@ -90,29 +106,18 @@ const Wallet = (() => {
     const connected = !!_address;
     const short     = connected ? getShortAddress(_address) : '';
 
-    // All connect buttons
     document.querySelectorAll('.btn-wallet-connect').forEach(el => {
       el.style.display = connected ? 'none' : '';
     });
-    // All wallet status pills
     document.querySelectorAll('.wallet-pill').forEach(el => {
       el.style.display = connected ? '' : 'none';
     });
-    // Address spans
     document.querySelectorAll('.wallet-addr').forEach(el => {
       el.textContent = short;
-    });
-    // Pera label
-    document.querySelectorAll('.wallet-label').forEach(el => {
-      el.textContent = connected ? 'Pera ✓' : '';
     });
   }
 
   // ---- Public API -----------------------------------------
-  function isAvailable() {
-    return typeof PeraWalletConnect !== 'undefined';
-  }
-
   function isConnected()   { return !!_address; }
   function getAddress()    { return _address; }
 
@@ -136,7 +141,6 @@ const Wallet = (() => {
     reconnectSession,
     connectWallet,
     disconnectWallet,
-    isAvailable,
     isConnected,
     getAddress,
     getDisplayName,

@@ -287,9 +287,8 @@
   </div>
 
   <!-- ==================== SCRIPTS ==================== -->
-  <!-- CDN: Supabase + Pera Wallet (loaded before our code) -->
+  <!-- CDN: Supabase (Pera Wallet is loaded on-demand via dynamic import in wallet.js) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/@perawallet/connect@1.3.4/dist/umd/index.umd.js"></script>
 
   <!-- Config & env (no deps) -->
   <script src="env.js"></script>
