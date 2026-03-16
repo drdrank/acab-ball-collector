@@ -1,119 +1,193 @@
 // ============================================================
 // WALLET.JS — Pera Wallet Connect
+// Ref: https://github.com/perawallet/connect
+// SDK: pera-wallet.js (self-hosted esbuild bundle → window.__PeraPkg)
 // ============================================================
 
-let peraWallet = null;
-let _sdkReady  = false;
+// IMPORTANT: peraWallet is initialised LAZILY (inside _getWallet).
+// Do NOT call new PeraWalletConnect() at the top level — if the bundle
+// hasn't loaded yet the TypeError kills this entire script silently.
+let _peraWallet = null;
 
-// ---- SDK becomes ready when module script fires event ----
-window.addEventListener('pera-sdk-ready', () => {
-  _sdkReady = true;
-  if (!window.PeraWalletConnect) return;
+function _getWallet() {
+  if (_peraWallet) return _peraWallet;
 
-  // Create single persistent instance
-  try {
-    peraWallet = new window.PeraWalletConnect();
-  } catch (e) {
-    console.warn('[Wallet] init failed:', e);
-    return;
+  const pkg = window.__PeraPkg;
+  if (!pkg || !pkg.PeraWalletConnect) {
+    _showError('Pera Wallet bundle not loaded. Please refresh the page.');
+    return null;
   }
 
-  // Try to restore previous session silently
-  peraWallet.reconnectSession()
-    .then(accounts => {
-      if (accounts && accounts.length > 0) _onConnected(accounts[0]);
+  try {
+    _peraWallet = new pkg.PeraWalletConnect({
+      chainId: 416001,             // MainNet (416002 = TestNet)
+      shouldShowSignTxnToast: false,
+    });
+    return _peraWallet;
+  } catch (e) {
+    _showError('Pera Wallet init failed: ' + (e?.message || e));
+    return null;
+  }
+}
+
+// ============================================================
+// RECONNECT SESSION — restore session on every page load
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  const pw = _getWallet();
+  if (!pw) return;
+
+  pw.reconnectSession()
+    .then((accounts) => {
+      pw.connector?.on('disconnect', handleDisconnectWalletClick);
+      if (accounts.length) _setAccountAddress(accounts[0]);
     })
-    .catch(() => {});
+    .catch(console.log);
 });
 
-// ---- Connect (called from button) ------------------------
-async function connectWallet() {
+// ============================================================
+// CONNECT — opens QR code / deep-links to Pera Wallet app
+// ============================================================
+function handleConnectWalletClick() {
   const btns = document.querySelectorAll('.btn-wallet-connect');
   btns.forEach(b => { b.textContent = '⏳ Connecting…'; b.disabled = true; });
+  _clearError();
 
-  // Wait for SDK if not ready yet (up to 8s)
-  if (!_sdkReady) {
-    await new Promise(resolve => {
-      const t = setTimeout(resolve, 8000);
-      window.addEventListener('pera-sdk-ready', () => { clearTimeout(t); resolve(); }, { once: true });
-    });
-  }
-
-  if (!peraWallet) {
+  const pw = _getWallet();
+  if (!pw) {
     btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
-    console.warn('[Wallet] SDK not available');
     return;
   }
 
-  try {
-    const accounts = await peraWallet.connect();
-    if (accounts && accounts.length > 0) {
-      _onConnected(accounts[0]);
-    } else {
+  // Pera injects a wrapper div into <body> containing a
+  // <pera-wallet-connect-modal> Web Component for the QR code.
+  // Our game screens sit at z-index 10–30; force any new body
+  // child to appear above them the instant it is injected.
+  const obs = new MutationObserver((mutations) => {
+    mutations.forEach((m) => {
+      m.addedNodes.forEach((node) => {
+        if (node.nodeType !== 1) return;
+        node.style.setProperty('z-index',        '2147483647', 'important');
+        node.style.setProperty('position',       'fixed',      'important');
+        node.style.setProperty('top',            '0',          'important');
+        node.style.setProperty('left',           '0',          'important');
+        node.style.setProperty('width',          '100%',       'important');
+        node.style.setProperty('height',         '100%',       'important');
+        node.style.setProperty('display',        'block',      'important');
+        node.style.setProperty('visibility',     'visible',    'important');
+        node.style.setProperty('opacity',        '1',          'important');
+        node.style.setProperty('pointer-events', 'all',        'important');
+      });
+    });
+  });
+  obs.observe(document.body, { childList: true });
+
+  pw.connect()
+    .then((newAccounts) => {
+      pw.connector?.on('disconnect', handleDisconnectWalletClick);
+      console.log('[Wallet] platform:', pw.platform);
+      _setAccountAddress(newAccounts[0]);
+    })
+    .catch((error) => {
       btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
-    }
-  } catch (e) {
-    btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
-    console.warn('[Wallet] connect cancelled or failed:', e?.message);
-  }
-}
-
-// ---- Disconnect ------------------------------------------
-async function disconnectWallet() {
-  if (peraWallet) {
-    try { await peraWallet.disconnect(); } catch (e) {}
-  }
-  _onDisconnected();
-}
-
-// ---- State handlers -------------------------------------
-function _onConnected(address) {
-  window._walletAddress = address;
-  const short = _short(address);
-
-  document.querySelectorAll('.btn-wallet-connect').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.wallet-pill').forEach(el => el.style.display = '');
-  document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = short);
-
-  // Load saved display name
-  const saved = localStorage.getItem('acab_wallet_name_' + address);
-  if (saved) Wallet._name = saved;
-  else if (typeof DB !== 'undefined' && DB.isReady()) {
-    DB.getProfile(address).then(p => {
-      if (p?.display_name) {
-        Wallet._name = p.display_name;
-        localStorage.setItem('acab_wallet_name_' + address, Wallet._name);
+      // CONNECT_MODAL_CLOSED = user dismissed on purpose, not an error
+      if (error?.data?.type !== 'CONNECT_MODAL_CLOSED') {
+        _showError('Connect failed: ' + (error?.message || String(error)));
+        console.log('[Wallet] connect error:', error);
       }
-    }).catch(() => {});
+    })
+    .finally(() => obs.disconnect());
+}
+
+// ============================================================
+// DISCONNECT
+// ============================================================
+function handleDisconnectWalletClick() {
+  const pw = _getWallet();
+  if (pw) pw.disconnect();
+  _setAccountAddress(null);
+}
+
+// ============================================================
+// SIGN TRANSACTION  (for future on-chain features)
+// txGroups: SignerTransaction[][]   signerAddress?: string
+// Returns: Promise<Uint8Array[]>
+// ============================================================
+async function signTransaction(txGroups, signerAddress) {
+  const pw = _getWallet();
+  if (!pw || !pw.isConnected) throw new Error('Wallet not connected');
+  return pw.signTransaction(txGroups, signerAddress);
+}
+
+// ============================================================
+// ADDRESS STATE
+// ============================================================
+function _setAccountAddress(address) {
+  window._walletAddress = address || null;
+
+  if (address) {
+    const short = _short(address);
+    document.querySelectorAll('.btn-wallet-connect').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.wallet-pill').forEach(el => el.style.display = '');
+    document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = short);
+    _clearError();
+
+    const saved = localStorage.getItem('acab_wallet_name_' + address);
+    if (saved) Wallet._name = saved;
+    else if (typeof DB !== 'undefined' && DB.isReady()) {
+      DB.getProfile(address).then(p => {
+        if (p?.display_name) {
+          Wallet._name = p.display_name;
+          localStorage.setItem('acab_wallet_name_' + address, Wallet._name);
+        }
+      }).catch(() => {});
+    }
+    if (typeof Audio !== 'undefined') Audio.play('unlock');
+
+  } else {
+    Wallet._name = null;
+    document.querySelectorAll('.btn-wallet-connect').forEach(el => el.style.display = '');
+    document.querySelectorAll('.wallet-pill').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = '');
   }
-
-  if (typeof Audio !== 'undefined') Audio.play('unlock');
 }
 
-function _onDisconnected() {
-  window._walletAddress = null;
-  Wallet._name = null;
-  document.querySelectorAll('.btn-wallet-connect').forEach(el => el.style.display = '');
-  document.querySelectorAll('.wallet-pill').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.wallet-addr').forEach(el => el.textContent = '');
-}
-
+// ============================================================
+// HELPERS
+// ============================================================
 function _short(addr) {
-  if (!addr || addr.length < 8) return addr || '';
-  return addr.slice(0, 5) + '...' + addr.slice(-4);
+  if (!addr || addr.length < 10) return addr || '';
+  return addr.slice(0, 6) + '…' + addr.slice(-4);
+}
+function _showError(msg) {
+  const el = document.getElementById('wallet-error-msg');
+  if (el) el.textContent = msg;
+}
+function _clearError() {
+  const el = document.getElementById('wallet-error-msg');
+  if (el) el.textContent = '';
 }
 
-// ---- Wallet object (used by online-leaderboard.js) ------
+// ============================================================
+// PUBLIC ALIASES — called from HTML onclick & online-leaderboard.js
+// ============================================================
+function connectWallet()    { handleConnectWalletClick(); }
+function disconnectWallet() { handleDisconnectWalletClick(); }
+
+// ============================================================
+// WALLET OBJECT — used by online-leaderboard.js and db.js
+// ============================================================
 const Wallet = {
   _name: null,
 
-  isConnected()         { return !!window._walletAddress; },
-  getAddress()          { return window._walletAddress || null; },
+  isConnected()  { return !!(_getWallet()?.isConnected); },
+  getAddress()   { return window._walletAddress || null; },
+  getPlatform()  { return _getWallet()?.platform || null; },
+
   getShortAddress(addr) { return _short(addr); },
 
   getDisplayName() {
-    if (this._name) return this._name;
-    return _short(window._walletAddress);
+    return this._name || _short(window._walletAddress);
   },
 
   setDisplayName(name) {
@@ -125,5 +199,6 @@ const Wallet = {
 
   connectWallet:    connectWallet,
   disconnectWallet: disconnectWallet,
+  signTransaction:  signTransaction,
   reconnectSession: () => Promise.resolve(null),
 };

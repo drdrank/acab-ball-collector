@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>ACAB Ball Collector</title>
+  <meta name="name" content="ACAB Ball Collector" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -30,6 +31,7 @@
           <button class="btn-wallet-x" onclick="disconnectWallet()" title="Disconnect">✕</button>
         </div>
       </div>
+      <div id="wallet-error-msg" class="wallet-error"></div>
 
       <div class="menu-buttons">
         <button class="btn btn-primary"    onclick="showScreen('screen-name')">▶ Play</button>
@@ -291,12 +293,8 @@
   <!-- CDN: Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-  <!-- Pera Wallet: static ES module import -->
-  <script type="module">
-    import { PeraWalletConnect } from 'https://esm.sh/@perawallet/connect';
-    window.PeraWalletConnect = PeraWalletConnect;
-    window.dispatchEvent(new CustomEvent('pera-sdk-ready'));
-  </script>
+  <!-- Pera Wallet SDK — self-hosted bundle (sets window.__PeraPkg) -->
+  <script src="pera-wallet.js"></script>
 
   <!-- Config & env (no deps) -->
   <script src="env.js"></script>

@@ -226,9 +226,10 @@ function spawnCollectibles(lvl) {
         y = padding + Math.random() * (CONFIG.CANVAS_H - padding * 2);
         safe = !isCollidingWithWalls(x, y, 12)
              && distTo(x, y, player.x, player.y) > 80
-             && distTo(x, y, exitGate.x, exitGate.y) > 50;
+             && distTo(x, y, exitGate.x, exitGate.y) > 50
+             && hazards.every(h => distTo(x, y, h.x, h.y) > h.radius + 35);
         attempts++;
-      } while (!safe && attempts < 50);
+      } while (!safe && attempts < 100);
 
       collectibles.push({
         type, x, y,
@@ -510,8 +511,11 @@ function checkHazards() {
     if (h.damage && dist < player.radius + h.radius) {
       // Shield absorbs hit
       if (tryShieldAbsorb()) {
+        player.invincible = true;
+        player.invTimer   = CONFIG.INVINCIBILITY_DURATION;
         Game.shake.timer     = 0.2;
         Game.shake.intensity = 4;
+        Audio.play('hit');
         showScorePopup(player.x, player.y - 24, '🛡️ Shield blocked!');
         return;
       }
@@ -772,11 +776,8 @@ function render() {
     ctx.translate((Math.random() - 0.5) * i, (Math.random() - 0.5) * i);
   }
 
-  // Background
-  ctx.fillStyle = lvl.bg;
-  ctx.fillRect(0, 0, CONFIG.CANVAS_W, CONFIG.CANVAS_H);
-
-  drawCourtLines();
+  // Background — drawn inside drawCourtLines (hardwood + paint)
+  drawCourtLines(lvl.bg);
 
   // Walls
   walls.forEach(w => {
@@ -1007,17 +1008,127 @@ function drawPlayer(now) {
 }
 
 // ---- Court lines ----
-function drawCourtLines() {
+function drawCourtLines(paintColor) {
+  const W  = CONFIG.CANVAS_W;   // 800
+  const H  = CONFIG.CANVAS_H;   // 560
+  const cx = W / 2;             // 400
+  const cy = H / 2;             // 280
+
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
-  ctx.lineWidth   = 2;
-  ctx.beginPath();
-  ctx.arc(CONFIG.CANVAS_W / 2, CONFIG.CANVAS_H / 2, 60, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(CONFIG.CANVAS_W / 2, 40);
-  ctx.lineTo(CONFIG.CANVAS_W / 2, CONFIG.CANVAS_H - 40);
-  ctx.stroke();
+
+  // ── Hardwood floor ──────────────────────────────────────────
+  ctx.fillStyle = '#C8893A';
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle wood-plank grain lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.lineWidth = 1;
+  for (let y = 8; y < H; y += 18) {
+    ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
+  }
+
+  // ── Paint areas (key / lane) ─────────────────────────────────
+  // Use the level's accent colour so each court feels unique
+  ctx.fillStyle = paintColor ? paintColor + '55' : 'rgba(180,60,30,0.32)';
+  ctx.fillRect(40,  215, 150, 130);   // left key
+  ctx.fillRect(610, 215, 150, 130);   // right key
+
+  // ── Court markings ───────────────────────────────────────────
+  const LINE = 'rgba(255,255,255,0.85)';
+  ctx.strokeStyle = LINE;
+  ctx.fillStyle   = LINE;
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  // Outer boundary (play area inside wall tiles)
+  ctx.strokeRect(40, 40, 720, 480);
+
+  // Half-court line
+  ctx.beginPath(); ctx.moveTo(cx, 40); ctx.lineTo(cx, H - 40); ctx.stroke();
+
+  // Centre circle + jump-ball dot
+  ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, 5,  0, Math.PI * 2); ctx.fill();
+
+  // ── Helper: draw one basket end ─────────────────────────────
+  // dir = +1 for left basket, -1 for right basket
+  function _end(rimX, baseX, dir) {
+    const kH  = 65;   // half key width
+    const kD  = 150;  // key depth (baseline → free-throw line)
+    const ftX = baseX + dir * kD;
+    const ftR = 54;
+    const tpR = 200;  // three-point radius
+
+    // Key rectangle
+    ctx.strokeRect(
+      dir > 0 ? baseX : ftX,
+      cy - kH,
+      kD,
+      kH * 2
+    );
+
+    // Free-throw circle — solid half toward court
+    ctx.beginPath();
+    ctx.arc(ftX, cy, ftR,
+      dir > 0 ? -Math.PI/2 : Math.PI/2,
+      dir > 0 ?  Math.PI/2 : -Math.PI/2,
+      false);
+    ctx.stroke();
+    // Dashed half inside key
+    ctx.save();
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.arc(ftX, cy, ftR,
+      dir > 0 ?  Math.PI/2 : -Math.PI/2,
+      dir > 0 ? -Math.PI/2 :  Math.PI/2,
+      false);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Three-point arc — meets baseline at ≈ y = cy ± 192
+    // Angles pre-calculated: at baseline dx=55 from rim, dy=192
+    const tpAng = 1.848;   // atan2(192, -55) for left  / clockwise through 0
+    const tpAng2 = 1.294;  // atan2(192,  55) for right / clockwise through π
+    ctx.beginPath();
+    if (dir > 0) {
+      ctx.arc(rimX, cy, tpR, -tpAng,  tpAng,  false);
+    } else {
+      ctx.arc(rimX, cy, tpR,  tpAng2, -tpAng2, false);
+    }
+    ctx.stroke();
+
+    // Backboard (thick short line)
+    ctx.lineWidth = 5;
+    const bbX = dir > 0 ? baseX + 14 : baseX - 14;
+    ctx.beginPath(); ctx.moveTo(bbX, cy - 22); ctx.lineTo(bbX, cy + 22); ctx.stroke();
+    ctx.lineWidth = 2.5;
+
+    // Rim circle
+    ctx.beginPath(); ctx.arc(rimX, cy, 13, 0, Math.PI * 2); ctx.stroke();
+
+    // Restricted-area arc (no-charge zone)
+    ctx.beginPath();
+    ctx.arc(rimX, cy, 28,
+      dir > 0 ? -Math.PI/2 :  Math.PI/2,
+      dir > 0 ?  Math.PI/2 : -Math.PI/2,
+      false);
+    ctx.stroke();
+
+    // Lane hash marks (stubs perpendicular to key edges)
+    const hPos = dir > 0
+      ? [baseX+35, baseX+65, baseX+100, baseX+130]
+      : [baseX-35, baseX-65, baseX-100, baseX-130];
+    hPos.forEach(x => {
+      ctx.beginPath(); ctx.moveTo(x, cy - kH);     ctx.lineTo(x, cy - kH - 11); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, cy + kH);     ctx.lineTo(x, cy + kH + 11); ctx.stroke();
+    });
+  }
+
+  _end(/*rimX*/95,  /*baseX*/40,  +1);  // left basket  (rim 55px from baseline)
+  _end(/*rimX*/705, /*baseX*/760, -1);  // right basket
+
   ctx.restore();
 }
 
