@@ -289,9 +289,20 @@
   </div>
 
   <!-- ==================== SCRIPTS ==================== -->
-  <!-- CDN: Supabase + Pera Wallet -->
+  <!-- CDN: Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/@perawallet/connect@1/dist/umd/index.umd.min.js"></script>
+
+  <!-- Pera Wallet: loaded as ES module, exposed as window.PeraWalletConnect -->
+  <script type="module">
+    try {
+      const { PeraWalletConnect } = await import('https://esm.sh/@perawallet/connect');
+      window.PeraWalletConnect = PeraWalletConnect;
+    } catch (e) {
+      console.error('[Pera] Failed to load SDK:', e);
+    } finally {
+      window.dispatchEvent(new CustomEvent('pera-sdk-ready'));
+    }
+  </script>
 
   <!-- Config & env (no deps) -->
   <script src="env.js"></script>
