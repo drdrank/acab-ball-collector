@@ -28,7 +28,10 @@ window.addEventListener('pera-sdk-ready', () => {
 
 // ---- Connect (called from button) ------------------------
 async function connectWallet() {
-  // If SDK not ready yet, wait up to 8s
+  const btns = document.querySelectorAll('.btn-wallet-connect');
+  btns.forEach(b => { b.textContent = '⏳ Connecting…'; b.disabled = true; });
+
+  // Wait for SDK if not ready yet (up to 8s)
   if (!_sdkReady) {
     await new Promise(resolve => {
       const t = setTimeout(resolve, 8000);
@@ -37,15 +40,20 @@ async function connectWallet() {
   }
 
   if (!peraWallet) {
+    btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
     console.warn('[Wallet] SDK not available');
     return;
   }
 
   try {
     const accounts = await peraWallet.connect();
-    if (accounts && accounts.length > 0) _onConnected(accounts[0]);
+    if (accounts && accounts.length > 0) {
+      _onConnected(accounts[0]);
+    } else {
+      btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
+    }
   } catch (e) {
-    // User closed the modal — not an error worth showing
+    btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
     console.warn('[Wallet] connect cancelled or failed:', e?.message);
   }
 }

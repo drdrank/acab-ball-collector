@@ -291,17 +291,11 @@
   <!-- CDN: Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-  <!-- Pera Wallet: loaded as ES module, exposed as window.PeraWalletConnect -->
+  <!-- Pera Wallet: static ES module import -->
   <script type="module">
-    try {
-      const mod = await import('https://esm.sh/@perawallet/connect');
-      // Handle both named export and default export
-      window.PeraWalletConnect = mod.PeraWalletConnect || mod.default;
-    } catch (e) {
-      console.warn('[Pera] SDK load error:', e);
-    } finally {
-      window.dispatchEvent(new CustomEvent('pera-sdk-ready'));
-    }
+    import { PeraWalletConnect } from 'https://esm.sh/@perawallet/connect';
+    window.PeraWalletConnect = PeraWalletConnect;
+    window.dispatchEvent(new CustomEvent('pera-sdk-ready'));
   </script>
 
   <!-- Config & env (no deps) -->

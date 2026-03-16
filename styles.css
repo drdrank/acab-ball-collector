@@ -444,6 +444,19 @@ body {
 .btn-wallet-x:hover { color: var(--text); }
 .wallet-error { font-size: 0.78rem; color: #ff6b6b; text-align: center; margin-top: 0.2rem; }
 
+/* Force Pera Wallet modal above all game overlays */
+.pera-wallet-connect-modal,
+.pera-wallet-connect-modal-wrapper,
+#pera-wallet-connect-modal,
+.walletconnect-modal__base,
+.walletconnect-qrcode__base,
+.walletconnect-modal,
+[class*="PeraWalletConnect"],
+[class*="pera-wallet"] {
+  z-index: 999999 !important;
+  position: fixed !important;
+}
+
 /* ============================================================ ONLINE SUBMIT BUTTON */
 .btn-online {
   background: linear-gradient(135deg, #7C4DFF, #4ECDC4);
