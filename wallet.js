@@ -11,25 +11,20 @@ const Wallet = (() => {
   let _address = null;
   let _name    = null;
 
-  // ---- Load Pera Wallet library on first use ---------------
-  async function _loadPera() {
-    if (_PeraCls) return _PeraCls;
-    try {
-      const mod = await import('https://esm.sh/@perawallet/connect');
-      _PeraCls  = mod.default || mod.PeraWalletConnect || mod;
-      return _PeraCls;
-    } catch (e) {
-      console.warn('[Wallet] Could not load @perawallet/connect:', e);
-      return null;
-    }
+  // ---- Get Pera class from UMD global ---------------------
+  function _getPeraCls() {
+    // UMD bundle exposes window["@perawallet/connect"].PeraWalletConnect
+    const pkg = window['@perawallet/connect'];
+    if (pkg && pkg.PeraWalletConnect) return pkg.PeraWalletConnect;
+    return null;
   }
 
-  async function _getPera() {
+  function _getPera() {
     if (_pera) return _pera;
-    const Cls = await _loadPera();
+    const Cls = _getPeraCls();
     if (!Cls) return null;
     try {
-      _pera = new Cls({ shouldShowSignTxnToast: false });
+      _pera = new Cls();
       return _pera;
     } catch (e) {
       console.warn('[Wallet] PeraWalletConnect init error:', e);
@@ -39,7 +34,7 @@ const Wallet = (() => {
 
   // ---- Session restore on page load -----------------------
   async function reconnectSession() {
-    const pera = await _getPera();
+    const pera = _getPera();
     if (!pera) return null;
     try {
       const accounts = await pera.reconnectSession();
@@ -53,7 +48,7 @@ const Wallet = (() => {
 
   // ---- Connect wallet -------------------------------------
   async function connectWallet() {
-    const pera = await _getPera();
+    const pera = _getPera();
     if (!pera) {
       alert('Could not load Pera Wallet.\nMake sure you have an internet connection and try again.');
       return null;
@@ -80,7 +75,7 @@ const Wallet = (() => {
     if (_pera) {
       try { await _pera.disconnect(); } catch (e) {}
     }
-    _pera    = null;   // force re-init on next connect
+    _pera    = null;
     _address = null;
     _name    = null;
     _updateUI();
