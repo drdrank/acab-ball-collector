@@ -1,81 +1,80 @@
 // ============================================================
 // WALLET.JS — Pera Wallet connection
 // ============================================================
-// Pera Wallet is loaded on-demand via dynamic import() from
-// esm.sh — no CDN script tag needed, works in any browser.
-// ============================================================
 
 const Wallet = (() => {
-  let _pera    = null;
-  let _PeraCls = null;
+  let _pera    = null;   // single instance, never re-created
   let _address = null;
   let _name    = null;
 
-  // ---- Get Pera class from UMD global ---------------------
-  function _getPeraCls() {
-    // UMD bundle exposes window["@perawallet/connect"].PeraWalletConnect
-    const pkg = window['@perawallet/connect'];
-    if (pkg && pkg.PeraWalletConnect) return pkg.PeraWalletConnect;
-    return null;
-  }
-
-  function _getPera() {
+  // ---- Create ONE instance and keep it --------------------
+  function _initPera() {
     if (_pera) return _pera;
-    const Cls = _getPeraCls();
-    if (!Cls) return null;
+    const pkg = window['@perawallet/connect'];
+    if (!pkg || !pkg.PeraWalletConnect) {
+      console.warn('[Wallet] @perawallet/connect not loaded yet');
+      return null;
+    }
     try {
-      _pera = new Cls();
+      _pera = new pkg.PeraWalletConnect();
+      // Handle wallet-side disconnects (e.g. user disconnects in app)
+      _pera.connector?.on('disconnect', () => {
+        _address = null;
+        _name    = null;
+        _updateUI();
+      });
       return _pera;
     } catch (e) {
-      console.warn('[Wallet] PeraWalletConnect init error:', e);
+      console.warn('[Wallet] init error:', e);
       return null;
     }
   }
 
-  // ---- Session restore on page load -----------------------
+  // ---- Restore existing session on page load --------------
   async function reconnectSession() {
-    const pera = _getPera();
+    const pera = _initPera();
     if (!pera) return null;
     try {
       const accounts = await pera.reconnectSession();
-      if (accounts && accounts[0]) {
+      if (accounts && accounts.length > 0) {
         await _setAddress(accounts[0]);
         return _address;
       }
-    } catch (e) { /* no saved session — fine */ }
+    } catch (e) {
+      // No saved session — normal, not an error
+    }
     return null;
   }
 
   // ---- Connect wallet -------------------------------------
   async function connectWallet() {
-    const pera = _getPera();
+    const pera = _initPera();
     if (!pera) {
-      alert('Could not load Pera Wallet.\nMake sure you have an internet connection and try again.');
+      alert('Pera Wallet could not be loaded.\nTry refreshing the page.');
       return null;
     }
     try {
       const accounts = await pera.connect();
-      if (accounts && accounts[0]) {
+      if (accounts && accounts.length > 0) {
         await _setAddress(accounts[0]);
         Audio.play('unlock');
         return _address;
       }
     } catch (e) {
-      // User closed modal — not an error worth alerting
-      const msg = e?.message || '';
-      if (!msg.includes('closed') && !msg.includes('cancelled') && !msg.includes('rejected')) {
+      const msg = (e?.message || '').toLowerCase();
+      if (!msg.includes('closed') && !msg.includes('cancel') && !msg.includes('reject')) {
         console.warn('[Wallet] connect error:', e);
       }
     }
     return null;
   }
 
-  // ---- Disconnect -----------------------------------------
+  // ---- Disconnect wallet ----------------------------------
   async function disconnectWallet() {
     if (_pera) {
       try { await _pera.disconnect(); } catch (e) {}
+      // Keep _pera alive — reconnect needs the same instance
     }
-    _pera    = null;
     _address = null;
     _name    = null;
     _updateUI();
@@ -87,7 +86,7 @@ const Wallet = (() => {
     const local = localStorage.getItem('acab_wallet_name_' + addr);
     if (local) {
       _name = local;
-    } else if (DB.isReady()) {
+    } else if (typeof DB !== 'undefined' && DB.isReady()) {
       const profile = await DB.getProfile(addr);
       if (profile && profile.display_name) {
         _name = profile.display_name;
