@@ -20,6 +20,18 @@
       <h1 class="game-title">ACAB Ball Collector</h1>
       <p class="subtitle">Always Carry A Ball</p>
       <p class="tagline">Collect balls. Grab smiles. Unlock play.</p>
+
+      <!-- Wallet status row -->
+      <div class="wallet-row">
+        <button class="btn-wallet-connect" onclick="connectWalletUI()">🔗 Connect Wallet</button>
+        <div class="wallet-pill" style="display:none">
+          <span class="wallet-dot">●</span>
+          <span class="wallet-addr"></span>
+          <span class="wallet-label"></span>
+          <button class="btn-wallet-x" onclick="disconnectWalletUI()" title="Disconnect">✕</button>
+        </div>
+      </div>
+
       <div class="menu-buttons">
         <button class="btn btn-primary"    onclick="showScreen('screen-name')">▶ Play</button>
         <button class="btn btn-secondary"  onclick="showScreen('screen-levelselect')">Select Level</button>
@@ -175,7 +187,8 @@
       </div>
       <div class="menu-buttons">
         <button class="btn btn-primary"   onclick="restartLevel()">Try Again</button>
-        <button class="btn btn-secondary" onclick="saveScoreAndLeaderboard()">Save Score</button>
+        <button class="btn btn-online"    id="go-online-btn" onclick="openOnlineSubmit('screen-gameover')" style="display:none">🌐 Submit Online</button>
+        <button class="btn btn-secondary" onclick="saveScoreAndLeaderboard()">💾 Save Locally</button>
         <button class="btn btn-danger"    onclick="quitToMenu()">Menu</button>
       </div>
     </div>
@@ -193,7 +206,8 @@
         <p>Total Stars: <b id="complete-stars">0</b> / 30</p>
       </div>
       <div class="menu-buttons">
-        <button class="btn btn-primary"   onclick="saveScoreAndLeaderboard()">Save to Leaderboard</button>
+        <button class="btn btn-online"    id="cp-online-btn" onclick="openOnlineSubmit('screen-complete')" style="display:none">🌐 Submit Online</button>
+        <button class="btn btn-secondary" onclick="saveScoreAndLeaderboard()">💾 Save Locally</button>
         <button class="btn btn-secondary" onclick="showScreen('screen-unlocks')">View Collection</button>
         <button class="btn btn-secondary" onclick="quitToMenu()">Menu</button>
       </div>
@@ -214,12 +228,17 @@
   <div id="screen-leaderboard" class="screen">
     <div class="panel wide">
       <h2>Leaderboard 🏆</h2>
+      <!-- Tabs -->
+      <div class="lb-tabs">
+        <button class="lb-tab lb-tab-active" data-tab="online" onclick="showLeaderboardTab('online')">🌐 Online</button>
+        <button class="lb-tab" data-tab="local"  onclick="showLeaderboardTab('local')">💾 Local</button>
+      </div>
       <div id="leaderboard-list" class="leaderboard-list"></div>
       <button class="btn btn-secondary" onclick="showScreen('screen-start')">Back</button>
     </div>
   </div>
 
-  <!-- SAVE SCORE -->
+  <!-- SAVE SCORE (local) -->
   <div id="screen-savescore" class="screen overlay">
     <div class="panel">
       <h2>Save Your Score</h2>
@@ -231,14 +250,65 @@
     </div>
   </div>
 
+  <!-- ONLINE SUBMIT -->
+  <div id="screen-online-submit" class="screen overlay">
+    <div class="panel">
+      <h2>🌐 Submit Score</h2>
+
+      <!-- Wallet not connected -->
+      <div id="osub-connect-area">
+        <p class="osub-hint">Connect your Pera Wallet to submit your score to the live leaderboard.</p>
+        <button class="btn btn-wallet-connect" onclick="osubConnectWallet()" style="margin:0.6rem auto;display:block">🔗 Connect Pera Wallet</button>
+      </div>
+
+      <!-- Wallet connected -->
+      <div id="osub-wallet-area" style="display:none">
+        <div class="wallet-pill osub-pill">
+          <span class="wallet-dot">●</span>
+          <span id="osub-wallet-addr"></span>
+          <span style="font-size:0.72rem;opacity:0.7">Pera ✓</span>
+        </div>
+      </div>
+
+      <div class="level-stats">
+        <p>Score: <b id="osub-score">0</b></p>
+        <p>Level: <b id="osub-level">1</b></p>
+        <p>Smiles: <b id="osub-tokens">0</b></p>
+      </div>
+
+      <input type="text" id="osub-name" class="name-input" maxlength="20"
+             placeholder="Nickname (optional — leave blank to use wallet address)" />
+
+      <div class="menu-buttons">
+        <button class="btn btn-primary" id="osub-submit-btn" onclick="confirmOnlineSubmit()">🏆 Submit Score</button>
+        <button class="btn btn-secondary" onclick="cancelOnlineSubmit()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== SCRIPTS ==================== -->
+  <!-- CDN: Supabase + Pera Wallet (loaded before our code) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/@perawallet/connect@1.3.4/dist/umd/index.umd.js"></script>
+
+  <!-- Config & env (no deps) -->
+  <script src="env.js"></script>
   <script src="config.js"></script>
+
+  <!-- Core systems -->
   <script src="audio.js"></script>
   <script src="progress.js"></script>
   <script src="powerups.js"></script>
   <script src="unlocks.js"></script>
   <script src="leaderboard.js"></script>
   <script src="mobile.js"></script>
+
+  <!-- Game engine -->
   <script src="script.js"></script>
+
+  <!-- Online layer (loaded last — patches showScreen) -->
+  <script src="db.js"></script>
+  <script src="wallet.js"></script>
+  <script src="online-leaderboard.js"></script>
 </body>
 </html>

@@ -400,3 +400,91 @@ body {
   padding-left:   env(safe-area-inset-left);
   padding-right:  env(safe-area-inset-right);
 }
+
+/* ============================================================ WALLET UI */
+.wallet-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.5rem; margin: 0.3rem 0 0.6rem;
+  min-height: 36px;
+}
+
+/* "Connect Wallet" button */
+.btn-wallet-connect {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: linear-gradient(135deg, rgba(124,77,255,0.25), rgba(78,205,196,0.18));
+  border: 1px solid rgba(124,77,255,0.45);
+  border-radius: 50px; padding: 0.42rem 1rem;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer; color: var(--text);
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-wallet-connect:hover {
+  background: linear-gradient(135deg, rgba(124,77,255,0.4), rgba(78,205,196,0.3));
+  transform: translateY(-1px);
+}
+
+/* Connected wallet pill */
+.wallet-pill {
+  display: flex; align-items: center; gap: 0.45rem;
+  background: rgba(78,205,196,0.1);
+  border: 1px solid rgba(78,205,196,0.35);
+  border-radius: 50px; padding: 0.38rem 0.85rem;
+  font-size: 0.82rem; font-weight: 700; color: var(--text);
+}
+.wallet-dot  { color: #4ECDC4; font-size: 0.65rem; }
+.wallet-addr { font-family: monospace; letter-spacing: 0.5px; }
+.wallet-label{ font-size: 0.68rem; color: var(--accent); opacity: 0.85; }
+.btn-wallet-x {
+  background: none; border: none; color: var(--muted);
+  font-size: 0.78rem; cursor: pointer; padding: 0 0.1rem;
+  line-height: 1;
+}
+.btn-wallet-x:hover { color: var(--text); }
+
+/* ============================================================ ONLINE SUBMIT BUTTON */
+.btn-online {
+  background: linear-gradient(135deg, #7C4DFF, #4ECDC4);
+  color: #fff; border: none; border-radius: 50px;
+  padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 700;
+  cursor: pointer; width: 100%; letter-spacing: 0.5px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 4px 18px rgba(124,77,255,0.35);
+}
+.btn-online:hover  { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(124,77,255,0.5); }
+.btn-online:active { transform: translateY(0); }
+
+/* ============================================================ LEADERBOARD TABS */
+.lb-tabs {
+  display: flex; gap: 0.4rem; margin-bottom: 0.75rem; justify-content: center;
+}
+.lb-tab {
+  flex: 1; max-width: 160px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 50px; padding: 0.4rem 1rem;
+  font-size: 0.82rem; font-weight: 700; color: var(--muted);
+  cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.lb-tab-active {
+  background: linear-gradient(135deg, rgba(124,77,255,0.3), rgba(78,205,196,0.2));
+  border-color: rgba(124,77,255,0.5);
+  color: var(--text);
+}
+.lb-me   { background: rgba(78,205,196,0.1) !important; border: 1px solid rgba(78,205,196,0.35) !important; }
+.lb-you  { background: var(--accent); color: #000; font-size: 0.62rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 50px; vertical-align: middle; }
+.lb-loading { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+/* ============================================================ ONLINE SUBMIT SCREEN */
+.osub-hint {
+  font-size: 0.88rem; color: var(--muted); text-align: center;
+  margin-bottom: 0.5rem; line-height: 1.5;
+}
+.osub-pill { justify-content: center; margin: 0 auto 0.5rem; width: fit-content; }
+
+/* ============================================================ MOBILE: wallet row */
+@media (max-width: 600px) {
+  .wallet-row { flex-wrap: wrap; }
+  .btn-wallet-connect { font-size: 0.78rem; padding: 0.38rem 0.85rem; }
+  .wallet-pill { font-size: 0.75rem; padding: 0.32rem 0.7rem; }
+}
