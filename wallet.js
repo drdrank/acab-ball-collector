@@ -12,14 +12,16 @@ let _peraWallet = null;
 function _getWallet() {
   if (_peraWallet) return _peraWallet;
 
-  const pkg = window.__PeraPkg;
-  if (!pkg || !pkg.PeraWalletConnect) {
-    _showError('Pera Wallet bundle not loaded. Please refresh the page.');
+  if (!window.PeraWalletConnect) {
+    const detail = window._peraLoadError
+      ? `Bundle error: ${window._peraLoadError}`
+      : 'pera-wallet.js did not load correctly. Please refresh.';
+    _showError(detail);
     return null;
   }
 
   try {
-    _peraWallet = new pkg.PeraWalletConnect({
+    _peraWallet = new window.PeraWalletConnect({
       chainId: 416001,             // MainNet (416002 = TestNet)
       shouldShowSignTxnToast: false,
     });
