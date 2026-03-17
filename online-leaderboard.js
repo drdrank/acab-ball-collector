@@ -46,15 +46,7 @@ async function renderOnlineLeaderboard() {
   const list = document.getElementById('leaderboard-list');
   if (!list) return;
 
-  if (!DB.isReady()) {
-    list.innerHTML = `<div class="empty-msg">
-      ⚙️ Online leaderboard not set up.<br>
-      <span style="font-size:0.78rem;opacity:0.7">
-        Add your Supabase keys in <b>env.js</b> to enable.
-      </span>
-    </div>`;
-    return;
-  }
+  // DB.isReady() always true for on-chain leaderboard
 
   list.innerHTML = '<div class="empty-msg lb-loading">🔄 Loading scores…</div>';
 
@@ -157,7 +149,7 @@ async function confirmOnlineSubmit() {
   if (typedName) Wallet.setDisplayName(typedName);
 
   const btn = document.getElementById('osub-submit-btn');
-  if (btn) { btn.textContent = '⏳ Submitting…'; btn.disabled = true; }
+  if (btn) { btn.textContent = '⏳ Sign in Pera…'; btn.disabled = true; }
 
   const result = await DB.submitScore(
     Wallet.getAddress(),
@@ -165,17 +157,21 @@ async function confirmOnlineSubmit() {
     Game.score,
     Game.level,
     Game.tokens,
-    getEquippedSkin().id
+    getEquippedSkin ? getEquippedSkin().id : 'classic'
   );
 
   if (btn) { btn.textContent = '🏆 Submit Score'; btn.disabled = false; }
+
+  if (result.reason === 'cancelled') {
+    // User rejected the Pera signing modal — do nothing
+    return;
+  }
 
   if (result.success) {
     if (result.updated) {
       showScreen('screen-leaderboard');
       showLeaderboardTab('online');
     } else {
-      // Score was not a new best — show leaderboard anyway
       const msg = `Your best score is already ${result.existingScore?.toLocaleString() || 'higher'}. This run didn't beat it.`;
       alert(msg);
       showScreen('screen-leaderboard');
@@ -183,7 +179,6 @@ async function confirmOnlineSubmit() {
     }
   } else {
     alert('Could not submit: ' + (result.reason || 'unknown error'));
-    if (btn) btn.disabled = false;
   }
 }
 

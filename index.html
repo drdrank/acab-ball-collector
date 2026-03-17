@@ -260,7 +260,7 @@
 
       <!-- Wallet not connected -->
       <div id="osub-connect-area">
-        <p class="osub-hint">Connect your Pera Wallet to submit your score to the live leaderboard.</p>
+        <p class="osub-hint">Connect your Pera Wallet to submit your score on-chain to the live leaderboard. Costs ~0.001 ALGO (network fee only).</p>
         <button class="btn btn-wallet-connect" onclick="osubConnectWallet()" style="margin:0.6rem auto;display:block">🔗 Connect Pera Wallet</button>
       </div>
 
@@ -290,8 +290,8 @@
   </div>
 
   <!-- ==================== SCRIPTS ==================== -->
-  <!-- CDN: Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Algorand SDK (for building score transactions) -->
+  <script src="https://cdn.jsdelivr.net/npm/algosdk@2.9.0/dist/browser/algosdk.min.js"></script>
 
   <!-- Pera Wallet SDK — self-hosted bundle (sets window.PeraWalletConnect) -->
   <script src="pera-wallet.js?v=3"></script>

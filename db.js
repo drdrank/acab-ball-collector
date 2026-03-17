@@ -1,133 +1,190 @@
 // ============================================================
-// DB.JS — Supabase client + leaderboard operations
+// DB.JS — On-chain leaderboard via Algorand + Algonode
 // ============================================================
-// Loaded after env.js (which defines ENV) and after the
-// Supabase CDN script (which defines window.supabase).
+// No backend required. Scores are stored as signed Algorand
+// transactions with a JSON note. Reading uses Algonode's free
+// public indexer. Writing uses Pera Wallet to sign + submit.
+//
+// Note format (JSON, stored as tx note bytes):
+//   {"g":"acab","s":1234,"l":5,"t":10,"n":"PlayerName"}
+//
+// Submitting costs ~0.001 ALGO (network fee only).
 // ============================================================
 
 const DB = (() => {
-  let client = null;
+  const ALGOD   = 'https://mainnet-api.algonode.cloud';
+  const INDEXER = 'https://mainnet-idx.algonode.cloud/v2';
 
-  // ---- Init ------------------------------------------------
-  function init() {
-    if (typeof supabase === 'undefined') return;
-    if (!ENV.SUPABASE_URL || ENV.SUPABASE_URL === 'YOUR_SUPABASE_URL_HERE') return;
-    try {
-      client = supabase.createClient(ENV.SUPABASE_URL, ENV.SUPABASE_ANON_KEY);
-      console.log('[DB] Supabase connected');
-    } catch (e) {
-      console.warn('[DB] Supabase init failed:', e);
-    }
-  }
+  // Note prefix: base64 of '{"g":"acab",' (12 bytes, clean base64)
+  const NOTE_TAG    = '{"g":"acab",';
+  const NOTE_PREFIX = btoa(NOTE_TAG); // eyJnIjoiYWNhYiIs
 
-  function isReady() { return !!client; }
+  // ---- always ready (uses public APIs) ----------------------
+  function isReady() { return true; }
+  function init()    {}  // no-op
 
-  // ---- Validation (basic anti-cheat) -----------------------
-  // NOTE: Add a Supabase Edge Function at /functions/v1/submit-score
-  // to validate server-side and verify wallet signatures.
-  // The client sends the same payload; the edge function checks
-  // that score is achievable given level/tokens, then upserts.
-  function _validate(payload) {
-    const { score, level_reached, smile_tokens, wallet_address } = payload;
-    if (typeof wallet_address !== 'string' || wallet_address.length < 8) return false;
-    if (typeof score !== 'number' || score < 0 || score > 999999) return false;
-    if (typeof level_reached !== 'number' || level_reached < 1 || level_reached > 10) return false;
-    if (typeof smile_tokens !== 'number' || smile_tokens < 0 || smile_tokens > 9999) return false;
-    return true;
-  }
-
-  // ---- Fetch top scores ------------------------------------
+  // ---- Fetch top scores from indexer ------------------------
   async function fetchTopScores(limit = 50) {
-    if (!client) return null;
     try {
-      const { data, error } = await client
-        .from('leaderboard_scores')
-        .select('wallet_address, display_name, score, level_reached, smile_tokens, updated_at')
-        .order('score', { ascending: false })
-        .limit(limit);
-      if (error) throw error;
-      return data;
+      const url = `${INDEXER}/transactions` +
+        `?note-prefix=${encodeURIComponent(NOTE_PREFIX)}` +
+        `&limit=500&tx-type=pay`;
+
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`Indexer ${resp.status}`);
+      const data = await resp.json();
+
+      // Keep best score per wallet address
+      const best = {};
+      for (const txn of (data.transactions || [])) {
+        if (!txn.note || !txn.sender) continue;
+        try {
+          const raw  = atob(txn.note);
+          const note = JSON.parse(raw);
+          if (note.g !== 'acab') continue;
+
+          const addr = txn.sender;
+          if (!best[addr] || note.s > best[addr].score) {
+            best[addr] = {
+              wallet_address: addr,
+              display_name:   note.n || null,
+              score:          Number(note.s) || 0,
+              level_reached:  Number(note.l) || 1,
+              smile_tokens:   Number(note.t) || 0,
+              updated_at:     txn['round-time']
+                ? new Date(txn['round-time'] * 1000).toISOString()
+                : null,
+            };
+          }
+        } catch (_) {}
+      }
+
+      return Object.values(best)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
     } catch (e) {
       console.warn('[DB] fetchTopScores error:', e);
       return null;
     }
   }
 
-  // ---- Submit score (best-only per wallet) -----------------
-  // WALLET SIGNATURE VERIFICATION can be added here:
-  //   1. Before submitting, call Wallet.signMessage(nonce + score + level)
-  //   2. Send { payload, signature } to a Supabase Edge Function
-  //   3. Edge Function verifies signature via algosdk.verifyBytes
-  //   4. Only then does it upsert into the DB
-  // Until then, basic client-side + RLS validation is used.
-  async function submitScore(wallet, displayName, score, level, tokens, skin) {
-    if (!client) return { success: false, reason: 'not_configured' };
+  // ---- Get a wallet's current best from the indexer ---------
+  async function _getBestForWallet(wallet) {
+    try {
+      const url = `${INDEXER}/accounts/${wallet}/transactions` +
+        `?note-prefix=${encodeURIComponent(NOTE_PREFIX)}&limit=100&tx-type=pay`;
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const data = await resp.json();
 
-    const payload = {
-      wallet_address: wallet,
-      display_name:   displayName || null,
-      score:          Math.round(score),
-      level_reached:  level,
-      smile_tokens:   tokens,
-      selected_skin:  skin || 'classic',
-      game_version:   ENV.GAME_VERSION || '1.0.0',
-      updated_at:     new Date().toISOString(),
-    };
+      let best = 0;
+      for (const txn of (data.transactions || [])) {
+        if (!txn.note) continue;
+        try {
+          const note = JSON.parse(atob(txn.note));
+          if (note.g === 'acab' && note.s > best) best = note.s;
+        } catch (_) {}
+      }
+      return best;
+    } catch (_) { return null; }
+  }
 
-    if (!_validate(payload)) {
-      return { success: false, reason: 'invalid_payload' };
+  // ---- Submit score as a signed Algorand transaction --------
+  async function submitScore(wallet, displayName, score, level, tokens) {
+    if (!window.algosdk) {
+      return { success: false, reason: 'algosdk not loaded — refresh the page' };
+    }
+    if (!Wallet.isConnected()) {
+      return { success: false, reason: 'wallet_not_connected' };
+    }
+
+    // Client-side check: only submit if a new personal best
+    const currentBest = await _getBestForWallet(wallet);
+    if (currentBest !== null && currentBest >= score) {
+      return {
+        success:       true,
+        updated:       false,
+        reason:        'not_a_new_best',
+        existingScore: currentBest,
+      };
     }
 
     try {
-      // Check if existing score is already higher
-      const { data: existing } = await client
-        .from('leaderboard_scores')
-        .select('score')
-        .eq('wallet_address', wallet)
-        .maybeSingle();
+      // 1. Get suggested params
+      const pResp = await fetch(`${ALGOD}/v2/transactions/params`);
+      if (!pResp.ok) throw new Error('Could not fetch tx params');
+      const p = await pResp.json();
 
-      if (existing && existing.score >= score) {
-        return { success: true, updated: false, reason: 'not_a_new_best', existingScore: existing.score };
+      // 2. Build note
+      const noteObj = {
+        g: 'acab',
+        s: Math.round(score),
+        l: level,
+        t: tokens,
+        n: (displayName || '').substring(0, 20),
+      };
+      const noteBytes = new TextEncoder().encode(JSON.stringify(noteObj));
+
+      // 3. Build transaction (self-send, 0 ALGO, just the fee)
+      const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+        from: wallet,
+        to:   wallet,
+        amount: 0,
+        note:   noteBytes,
+        suggestedParams: {
+          fee:         1000,
+          flatFee:     true,
+          firstValid:  p['last-round'],
+          lastValid:   p['last-round'] + 1000,
+          genesisID:   p['genesis-id'],
+          genesisHash: p['genesis-hash'],
+        },
+      });
+
+      // 4. Sign with Pera Wallet (opens Pera sign modal)
+      const signedArr = await Wallet.signTransaction(
+        [[{ txn, signers: [wallet] }]]
+      );
+
+      // 5. Submit to network
+      const sResp = await fetch(`${ALGOD}/v2/transactions`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-binary' },
+        body:    signedArr[0],
+      });
+
+      if (!sResp.ok) {
+        const err = await sResp.json().catch(() => ({}));
+        throw new Error(err.message || `Submit failed (${sResp.status})`);
       }
 
-      const { error } = await client
-        .from('leaderboard_scores')
-        .upsert(payload, { onConflict: 'wallet_address' });
+      const result = await sResp.json();
+      console.log('[DB] Score on-chain, txId:', result.txId);
+      return { success: true, updated: true, txId: result.txId };
 
-      if (error) throw error;
-      return { success: true, updated: true };
     } catch (e) {
+      // User cancelled the Pera sign modal
+      if (String(e).includes('CANCELLED') || String(e?.data?.type).includes('CANCELLED')) {
+        return { success: false, reason: 'cancelled' };
+      }
       console.warn('[DB] submitScore error:', e);
       return { success: false, reason: e.message || 'unknown_error' };
     }
   }
 
-  // ---- Get profile for a wallet ----------------------------
+  // ---- Get profile (best score) for a wallet ----------------
   async function getProfile(wallet) {
-    if (!client) return null;
-    try {
-      const { data } = await client
-        .from('leaderboard_scores')
-        .select('display_name, score')
-        .eq('wallet_address', wallet)
-        .maybeSingle();
-      return data;
-    } catch (e) { return null; }
+    const best = await _getBestForWallet(wallet);
+    return best ? { score: best } : null;
   }
 
-  // ---- Realtime subscription -------------------------------
+  // ---- Poll for new scores every 30 s -----------------------
   function subscribeLeaderboard(callback) {
-    if (!client) return null;
-    return client
-      .channel('leaderboard-live')
-      .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'leaderboard_scores' },
-          callback)
-      .subscribe();
+    return setInterval(callback, 30000);
   }
 
   return { init, isReady, fetchTopScores, submitScore, getProfile, subscribeLeaderboard };
 })();
 
-// Auto-init when this script loads
 DB.init();
