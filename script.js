@@ -1491,8 +1491,12 @@ function _formatTime(s) {
 // CANVAS
 // ============================================================
 function resizeCanvas() {
-  canvas.width  = CONFIG.CANVAS_W;
-  canvas.height = CONFIG.CANVAS_H;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = CONFIG.CANVAS_W * dpr;
+  canvas.height = CONFIG.CANVAS_H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 }
 
 window.addEventListener('resize', () => { if (Game.running) resizeCanvas(); });
