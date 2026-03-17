@@ -655,7 +655,7 @@ function levelComplete() {
   if (Game.level < 10) Progress.unlockLevel(Game.level + 1);
 
   // Skin unlocks
-  const isComplete   = Game.level === 10;
+  const isComplete   = Game.level === 20;
   const newUnlocks   = checkAndUnlock(Game.level, Game.totalTokens, isComplete);
   const unlockMsg    = newUnlocks.length
     ? `🎁 Unlocked: ${newUnlocks.map(u => u.name + ' ' + u.emoji).join(', ')}!`
@@ -699,7 +699,7 @@ function calculateStars() {
 }
 
 function nextLevel() {
-  if (Game.level >= 10) { gameComplete(); return; }
+  if (Game.level >= 20) { gameComplete(); return; }
   levelCompleteTriggered = false;
   Game.level++;
   loadLevel(Game.level);

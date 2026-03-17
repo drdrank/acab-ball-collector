@@ -183,12 +183,25 @@ html, body {
 .lc-court-8  { background: linear-gradient(160deg, #0A0A20 0%, #050510 100%); }
 .lc-court-9  { background: linear-gradient(160deg, #3A2A10 0%, #1A100A 100%); }
 .lc-court-10 { background: linear-gradient(160deg, #E0E0FF 0%, #C0C0F0 100%); }
+.lc-court-11 { background: linear-gradient(160deg, #3A0555 0%, #1A0533 100%); }
+.lc-court-12 { background: linear-gradient(160deg, #2A5010 0%, #1A2E0A 100%); }
+.lc-court-13 { background: linear-gradient(160deg, #050530 0%, #020220 100%); }
+.lc-court-14 { background: linear-gradient(160deg, #2A2A45 0%, #1A1A2E 100%); }
+.lc-court-15 { background: linear-gradient(160deg, #6A3800 0%, #3A2000 100%); }
+.lc-court-16 { background: linear-gradient(160deg, #3A1060 0%, #1A0A2E 100%); }
+.lc-court-17 { background: linear-gradient(160deg, #001030 0%, #000010 100%); }
+.lc-court-18 { background: linear-gradient(160deg, #200050 0%, #0A0020 100%); }
+.lc-court-19 { background: linear-gradient(160deg, #2A0000 0%, #0A0000 100%); }
+.lc-court-20 { background: linear-gradient(160deg, #3A2A00 0%, #1A1200 100%); }
 
 /* Court accent lines on cards */
-.lc-court-1::before, .lc-court-2::before, .lc-court-3::before,
-.lc-court-4::before, .lc-court-5::before, .lc-court-6::before,
-.lc-court-7::before, .lc-court-8::before, .lc-court-9::before,
-.lc-court-10::before {
+.lc-court-1::before,  .lc-court-2::before,  .lc-court-3::before,
+.lc-court-4::before,  .lc-court-5::before,  .lc-court-6::before,
+.lc-court-7::before,  .lc-court-8::before,  .lc-court-9::before,
+.lc-court-10::before, .lc-court-11::before, .lc-court-12::before,
+.lc-court-13::before, .lc-court-14::before, .lc-court-15::before,
+.lc-court-16::before, .lc-court-17::before, .lc-court-18::before,
+.lc-court-19::before, .lc-court-20::before {
   content: '';
   position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
   width: 80px; height: 80px;

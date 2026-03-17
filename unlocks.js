@@ -74,8 +74,8 @@ const BALL_SKINS = [
   {
     id: 'acab', name: 'ACAB Ball',
     emoji: '🏆', img: 'balls/acab_ball.png', color: '#7C4DFF',
-    description: 'Complete all 10 levels.',
-    unlockType: 'complete', unlockValue: 10,
+    description: 'Complete all 20 levels.',
+    unlockType: 'complete', unlockValue: 20,
   },
 ];
 
@@ -166,7 +166,7 @@ function renderUnlocksScreen() {
       if (skin.unlockType === 'tokens')   lockLabel = `Collect ${skin.unlockValue} 😊`;
       if (skin.unlockType === 'stars')    lockLabel = `Earn ${skin.unlockValue} ⭐ total`;
       if (skin.unlockType === 'score')    lockLabel = `Score ${skin.unlockValue.toLocaleString()} pts`;
-      if (skin.unlockType === 'complete') lockLabel = 'Complete all 10 levels';
+      if (skin.unlockType === 'complete') lockLabel = 'Complete all 20 levels';
     }
 
     const ballDisplay = unlocked && skin.img
