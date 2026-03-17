@@ -594,7 +594,7 @@ function checkGoals() {
     exitGate.openTimer = 0;
     Audio.play('gate');
     spawnPickupParticles(exitGate.x, exitGate.y, '#00FF88');
-    showScorePopup(exitGate.x, exitGate.y - 40, '🚪 Exit Open!');
+    showScorePopup(exitGate.x, exitGate.y - 40, '🪣 Bucket Open!');
   }
 }
 
@@ -779,7 +779,7 @@ function render() {
   }
 
   // Background — drawn inside drawCourtLines (hardwood + paint)
-  drawCourtLines(lvl.bg);
+  drawCourtLines(lvl);
 
   // Walls
   walls.forEach(w => {
@@ -1010,45 +1010,224 @@ function drawPlayer(now) {
 }
 
 // ---- Court lines ----
-function drawCourtLines(paintColor) {
-  const W  = CONFIG.CANVAS_W;   // 800
-  const H  = CONFIG.CANVAS_H;   // 560
-  const cx = W / 2;             // 400
-  const cy = H / 2;             // 280
+function drawCourtLines(lvl) {
+  const W  = CONFIG.CANVAS_W;
+  const H  = CONFIG.CANVAS_H;
+  const cx = W / 2;
+  const cy = H / 2;
+  const ct = lvl.courtTheme || { style:'hardwood', floorColor:'#B8732A', paintColor:'#C8102E', lineColor:'#FFFFFF' };
 
   ctx.save();
 
-  // ── Hardwood floor ──────────────────────────────────────────
-  // Dark base, then lighter planks
-  ctx.fillStyle = '#A0611A';
-  ctx.fillRect(0, 0, W, H);
-  // Light plank strips alternating
-  for (let y = 0; y < H; y += 18) {
-    ctx.fillStyle = (Math.floor(y / 18) % 2 === 0) ? 'rgba(255,200,100,0.22)' : 'rgba(0,0,0,0.04)';
-    ctx.fillRect(0, y, W, 18);
-  }
-  // Subtle grain lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.10)';
-  ctx.lineWidth = 0.8;
-  for (let y = 18; y < H; y += 18) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  // ── Floor ──────────────────────────────────────────────────
+  const style = ct.style;
+
+  if (style === 'hardwood') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    for (let y = 0; y < H; y += 16) {
+      ctx.fillStyle = (Math.floor(y/16) % 2 === 0) ? 'rgba(255,210,120,0.20)' : 'rgba(0,0,0,0.04)';
+      ctx.fillRect(0, y, W, 16);
+    }
+    ctx.strokeStyle = 'rgba(0,0,0,0.09)';
+    ctx.lineWidth = 0.7;
+    for (let y = 16; y < H; y += 16) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    // Gloss sheen
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0,   'rgba(255,255,255,0.10)');
+    g.addColorStop(0.4, 'rgba(255,255,255,0.03)');
+    g.addColorStop(1,   'rgba(0,0,0,0.10)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+  } else if (style === 'blacktop') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Asphalt noise via tiny dots
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    for (let i = 0; i < 300; i++) {
+      const rx = Math.sin(i * 73.1) * 0.5 + 0.5;
+      const ry = Math.sin(i * 137.5) * 0.5 + 0.5;
+      ctx.fillRect(rx*W, ry*H, 2, 1);
+    }
+    // Cracks
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    [[100,80,180,160],[400,50,460,200],[600,300,700,380],[200,400,300,480],[550,120,620,200]].forEach(([x1,y1,x2,y2]) => {
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    });
+
+  } else if (style === 'stone') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Stone tile grid
+    ctx.strokeStyle = 'rgba(0,0,0,0.30)';
+    ctx.lineWidth = 2;
+    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    // Slight tile variation
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let tx = 0; tx < W; tx += 60) {
+      for (let ty = 0; ty < H; ty += 60) {
+        if ((tx/60 + ty/60) % 2 === 0) ctx.fillRect(tx+1, ty+1, 58, 58);
+      }
+    }
+
+  } else if (style === 'beach') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Sand ripples
+    ctx.strokeStyle = 'rgba(180,130,60,0.25)';
+    ctx.lineWidth = 1.5;
+    for (let y = 20; y < H; y += 20) {
+      ctx.beginPath();
+      for (let x = 0; x < W; x += 4) {
+        const wave = Math.sin(x * 0.05 + y * 0.1) * 3;
+        x === 0 ? ctx.moveTo(x, y + wave) : ctx.lineTo(x, y + wave);
+      }
+      ctx.stroke();
+    }
+
+  } else if (style === 'forest') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Dirt patches
+    ctx.fillStyle = 'rgba(100,60,20,0.18)';
+    [[200,200,80,50],[450,350,100,60],[650,150,70,45],[120,420,90,55]].forEach(([x,y,rw,rh]) => {
+      ctx.beginPath(); ctx.ellipse(x,y,rw,rh,0,0,Math.PI*2); ctx.fill();
+    });
+    // Moss texture lines
+    ctx.strokeStyle = 'rgba(100,160,60,0.15)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < H; y += 12) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+
+  } else if (style === 'ice') {
+    const ig = ctx.createLinearGradient(0, 0, W, H);
+    ig.addColorStop(0, '#C8E8F8');
+    ig.addColorStop(0.5, ct.floorColor);
+    ig.addColorStop(1, '#D8EEF8');
+    ctx.fillStyle = ig;
+    ctx.fillRect(0, 0, W, H);
+    // Ice cracks
+    ctx.strokeStyle = 'rgba(100,160,220,0.35)';
+    ctx.lineWidth = 1;
+    [[80,60,180,130,250,100],[400,50,500,150,580,80],[600,300,680,380,750,320],[100,350,200,430,280,400]].forEach(pts => {
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i+=2) {
+        i === 0 ? ctx.moveTo(pts[i],pts[i+1]) : ctx.lineTo(pts[i],pts[i+1]);
+      }
+      ctx.stroke();
+    });
+    // Sparkle dots
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    [[120,80],[380,140],[650,220],[200,400],[500,460],[700,100]].forEach(([x,y]) => {
+      ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+    });
+
+  } else if (style === 'fire') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Lava cracks glowing
+    ctx.strokeStyle = 'rgba(255,80,0,0.60)';
+    ctx.lineWidth = 2;
+    [[80,100,200,200,160,320],[500,80,600,200,680,150],[200,300,350,420,300,500],[600,350,700,450,750,400]].forEach(pts => {
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i+=2) {
+        i === 0 ? ctx.moveTo(pts[i],pts[i+1]) : ctx.lineTo(pts[i],pts[i+1]);
+      }
+      ctx.stroke();
+    });
+    // Glow under cracks
+    ctx.strokeStyle = 'rgba(255,140,0,0.25)';
+    ctx.lineWidth = 6;
+    [[80,100,200,200,160,320],[500,80,600,200,680,150]].forEach(pts => {
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i+=2) {
+        i === 0 ? ctx.moveTo(pts[i],pts[i+1]) : ctx.lineTo(pts[i],pts[i+1]);
+      }
+      ctx.stroke();
+    });
+    ctx.lineWidth = 2;
+
+  } else if (style === 'neon') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Subtle grid glow
+    ctx.strokeStyle = 'rgba(0,200,200,0.07)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  } else if (style === 'luxury') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Dark walnut planks
+    for (let y = 0; y < H; y += 20) {
+      ctx.fillStyle = (Math.floor(y/20) % 2 === 0) ? 'rgba(80,50,20,0.30)' : 'rgba(0,0,0,0.10)';
+      ctx.fillRect(0, y, W, 20);
+    }
+    ctx.strokeStyle = 'rgba(40,20,5,0.30)';
+    ctx.lineWidth = 1;
+    for (let y = 20; y < H; y += 20) {
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    // Spotlight glow
+    const sg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 350);
+    sg.addColorStop(0, 'rgba(255,220,100,0.10)');
+    sg.addColorStop(1, 'rgba(0,0,0,0.20)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(0, 0, W, H);
+
+  } else if (style === 'rainbow') {
+    ctx.fillStyle = ct.floorColor;
+    ctx.fillRect(0, 0, W, H);
+    // Shiny white planks
+    for (let y = 0; y < H; y += 14) {
+      ctx.fillStyle = (Math.floor(y/14) % 2 === 0) ? 'rgba(200,200,255,0.12)' : 'rgba(0,0,0,0.02)';
+      ctx.fillRect(0, y, W, 14);
+    }
+    // Rainbow shimmer overlay
+    const rbg = ctx.createLinearGradient(0, 0, W, 0);
+    rbg.addColorStop(0,    'rgba(255,0,0,0.06)');
+    rbg.addColorStop(0.17, 'rgba(255,140,0,0.06)');
+    rbg.addColorStop(0.33, 'rgba(255,255,0,0.06)');
+    rbg.addColorStop(0.50, 'rgba(0,200,0,0.06)');
+    rbg.addColorStop(0.67, 'rgba(0,120,255,0.06)');
+    rbg.addColorStop(0.83, 'rgba(80,0,200,0.06)');
+    rbg.addColorStop(1,    'rgba(255,0,200,0.06)');
+    ctx.fillStyle = rbg;
+    ctx.fillRect(0, 0, W, H);
+
+  } else {
+    // Fallback hardwood
+    ctx.fillStyle = '#A0611A';
+    ctx.fillRect(0, 0, W, H);
   }
 
   // ── Paint areas (key / lane) ─────────────────────────────────
-  // Use the level's accent colour so each court feels unique
-  ctx.fillStyle = paintColor ? paintColor + '88' : 'rgba(180,60,30,0.50)';
+  ctx.fillStyle = ct.paintColor ? ct.paintColor + '88' : 'rgba(180,60,30,0.50)';
   ctx.fillRect(40,  215, 150, 130);   // left key
   ctx.fillRect(610, 215, 150, 130);   // right key
 
   // ── Court markings ───────────────────────────────────────────
-  const LINE = 'rgba(255,255,255,0.85)';
+  const LINE = ct.lineColor || 'rgba(255,255,255,0.85)';
   ctx.strokeStyle = LINE;
   ctx.fillStyle   = LINE;
-  ctx.lineWidth   = 2.5;
+  ctx.lineWidth   = style === 'neon' ? 1.8 : 2.5;
   ctx.lineCap     = 'round';
   ctx.lineJoin    = 'round';
 
-  // Outer boundary (play area inside wall tiles)
+  // Neon glow effect
+  if (style === 'neon') {
+    ctx.shadowColor = ct.lineColor;
+    ctx.shadowBlur  = 8;
+  }
+
+  // Outer boundary
   ctx.strokeRect(40, 40, 720, 480);
 
   // Half-court line
@@ -1058,16 +1237,26 @@ function drawCourtLines(paintColor) {
   ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI * 2); ctx.stroke();
   ctx.beginPath(); ctx.arc(cx, cy, 5,  0, Math.PI * 2); ctx.fill();
 
-  // ── Helper: draw one basket end ─────────────────────────────
-  // dir = +1 for left basket, -1 for right basket
+  // Second line color for rainbow/neon midcourt
+  if (style === 'rainbow') {
+    ctx.strokeStyle = '#FF69B4';
+    ctx.shadowColor = '#FF69B4';
+    ctx.shadowBlur  = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, 60, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = LINE;
+    ctx.shadowBlur  = 0;
+  }
+
   function _end(rimX, baseX, dir) {
-    const kH  = 65;   // half key width
-    const kD  = 150;  // key depth (baseline → free-throw line)
+    const kH  = 65;
+    const kD  = 150;
     const ftX = baseX + dir * kD;
     const ftR = 54;
-    const tpR = 200;  // three-point radius
+    const tpR = 200;
 
-    // Key rectangle
+    ctx.strokeStyle = LINE;
+    if (style === 'neon') { ctx.shadowColor = ct.lineColor; ctx.shadowBlur = 8; }
+
     ctx.strokeRect(
       dir > 0 ? baseX : ftX,
       cy - kH,
@@ -1075,14 +1264,12 @@ function drawCourtLines(paintColor) {
       kH * 2
     );
 
-    // Free-throw circle — solid half toward court
     ctx.beginPath();
     ctx.arc(ftX, cy, ftR,
       dir > 0 ? -Math.PI/2 : Math.PI/2,
       dir > 0 ?  Math.PI/2 : -Math.PI/2,
       false);
     ctx.stroke();
-    // Dashed half inside key
     ctx.save();
     ctx.setLineDash([8, 6]);
     ctx.beginPath();
@@ -1094,10 +1281,8 @@ function drawCourtLines(paintColor) {
     ctx.setLineDash([]);
     ctx.restore();
 
-    // Three-point arc — meets baseline at ≈ y = cy ± 192
-    // Angles pre-calculated: at baseline dx=55 from rim, dy=192
-    const tpAng = 1.848;   // atan2(192, -55) for left  / clockwise through 0
-    const tpAng2 = 1.294;  // atan2(192,  55) for right / clockwise through π
+    const tpAng  = 1.848;
+    const tpAng2 = 1.294;
     ctx.beginPath();
     if (dir > 0) {
       ctx.arc(rimX, cy, tpR, -tpAng,  tpAng,  false);
@@ -1106,16 +1291,13 @@ function drawCourtLines(paintColor) {
     }
     ctx.stroke();
 
-    // Backboard (thick short line)
     ctx.lineWidth = 5;
     const bbX = dir > 0 ? baseX + 14 : baseX - 14;
     ctx.beginPath(); ctx.moveTo(bbX, cy - 22); ctx.lineTo(bbX, cy + 22); ctx.stroke();
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = style === 'neon' ? 1.8 : 2.5;
 
-    // Rim circle
     ctx.beginPath(); ctx.arc(rimX, cy, 13, 0, Math.PI * 2); ctx.stroke();
 
-    // Restricted-area arc (no-charge zone)
     ctx.beginPath();
     ctx.arc(rimX, cy, 28,
       dir > 0 ? -Math.PI/2 :  Math.PI/2,
@@ -1123,7 +1305,6 @@ function drawCourtLines(paintColor) {
       false);
     ctx.stroke();
 
-    // Lane hash marks (stubs perpendicular to key edges)
     const hPos = dir > 0
       ? [baseX+35, baseX+65, baseX+100, baseX+130]
       : [baseX-35, baseX-65, baseX-100, baseX-130];
@@ -1133,9 +1314,10 @@ function drawCourtLines(paintColor) {
     });
   }
 
-  _end(/*rimX*/95,  /*baseX*/40,  +1);  // left basket  (rim 55px from baseline)
-  _end(/*rimX*/705, /*baseX*/760, -1);  // right basket
+  _end(95,  40,  +1);
+  _end(705, 760, -1);
 
+  ctx.shadowBlur = 0;
   ctx.restore();
 }
 

@@ -78,9 +78,11 @@ const Progress = (() => {
       const best     = getBestScore(lvl.id);
       const starStr  = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
 
+      const ct = lvl.courtTheme || {};
       const card = document.createElement('div');
-      card.className = `level-card ${unlocked ? 'lc-unlocked' : 'lc-locked'}`;
+      card.className = `level-card ${unlocked ? 'lc-unlocked' : 'lc-locked'} lc-court-${lvl.id}`;
       card.innerHTML = `
+        <div class="lc-court-icon">${ct.icon || ''}</div>
         <div class="lc-num">${lvl.id}</div>
         <div class="lc-name">${unlocked ? lvl.name : '???'}</div>
         <div class="lc-stars">${starStr}</div>

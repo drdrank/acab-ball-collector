@@ -109,6 +109,7 @@ const LEVELS = [
       { x: 19, y:  0, w:  1, h: 14 },
     ],
     bg: '#4CAF50',
+    courtTheme: { style:'hardwood', floorColor:'#B8732A', paintColor:'#C8102E', lineColor:'#FFFFFF', icon:'🏀', label:'NBA Hardwood' },
   },
 
   // ══════════════════════════════════════════════
@@ -133,6 +134,7 @@ const LEVELS = [
       { x: 13, y:  9, w:  3, h:  1 },
     ],
     bg: '#43A047',
+    courtTheme: { style:'blacktop', floorColor:'#282828', paintColor:'#1A4FA0', lineColor:'#DDDDDD', icon:'🏟️', label:'Blacktop' },
   },
 
   // ══════════════════════════════════════════════
@@ -158,6 +160,7 @@ const LEVELS = [
       { x: 13, y:  5, w:  1, h:  4 },
     ],
     bg: '#388E3C',
+    courtTheme: { style:'stone', floorColor:'#6E6E72', paintColor:'#7B3F8C', lineColor:'#E8E8E8', icon:'🪨', label:'Stone Court' },
   },
 
   // ══════════════════════════════════════════════
@@ -185,6 +188,7 @@ const LEVELS = [
       { x: 15, y:  3, w:  1, h:  5 },
     ],
     bg: '#2E7D32',
+    courtTheme: { style:'beach', floorColor:'#D4A76A', paintColor:'#2FA8A8', lineColor:'#FFFFFF', icon:'🌊', label:'Beach Court' },
   },
 
   // ══════════════════════════════════════════════
@@ -213,6 +217,7 @@ const LEVELS = [
       { x:  7, y:  9, w:  6, h:  1 },
     ],
     bg: '#827717',
+    courtTheme: { style:'forest', floorColor:'#3B5A2A', paintColor:'#7A4E2D', lineColor:'#D0E8C0', icon:'🌲', label:'Forest Court' },
   },
 
   // ══════════════════════════════════════════════
@@ -243,6 +248,7 @@ const LEVELS = [
       { x:  7, y:  6, w:  6, h:  1 },
     ],
     bg: '#1565C0',
+    courtTheme: { style:'ice', floorColor:'#B8D8F0', paintColor:'#78B4E0', lineColor:'#FFFFFF', icon:'❄️', label:'Ice Court' },
   },
 
   // ══════════════════════════════════════════════
@@ -281,6 +287,7 @@ const LEVELS = [
       { x: 14, y:  9, w:  4, h:  1 },
     ],
     bg: '#4527A0',
+    courtTheme: { style:'fire', floorColor:'#180800', paintColor:'#CC3300', lineColor:'#FF8800', icon:'🔥', label:'Fire Court' },
   },
 
   // ══════════════════════════════════════════════
@@ -315,6 +322,7 @@ const LEVELS = [
       { x:  8, y:  6, w:  4, h:  2 },
     ],
     bg: '#B71C1C',
+    courtTheme: { style:'neon', floorColor:'#050510', paintColor:'#00CCCC', lineColor:'#FF00CC', icon:'🌙', label:'Night Neon' },
   },
 
   // ══════════════════════════════════════════════
@@ -351,6 +359,7 @@ const LEVELS = [
       { x:  9, y:  5, w:  2, h:  4 },
     ],
     bg: '#880E4F',
+    courtTheme: { style:'luxury', floorColor:'#2A1A0E', paintColor:'#B8960C', lineColor:'#FFD700', icon:'🏛️', label:'Luxury Indoor' },
   },
 
   // ══════════════════════════════════════════════
@@ -396,5 +405,6 @@ const LEVELS = [
       { x: 11, y:  5, w:  1, h:  4 },
     ],
     bg: '#1A237E',
+    courtTheme: { style:'rainbow', floorColor:'#F0F0FF', paintColor:'#FF6B9D', lineColor:'#FFFFFF', icon:'🌈', label:'Rainbow Champion' },
   },
 ];
