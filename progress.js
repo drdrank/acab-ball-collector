@@ -67,12 +67,26 @@ const Progress = (() => {
   }
 
   // ---- Level Select UI ----
-  function renderLevelSelect() {
+  let _activeTab = 1; // 1=L1-10, 2=L11-20, 3=L21-30
+
+  function renderLevelSelect(tab) {
+    if (tab !== undefined) _activeTab = tab;
     const grid = document.getElementById('level-select-grid');
     if (!grid) return;
-    grid.innerHTML = '';
 
-    LEVELS.forEach(lvl => {
+    // Render tab bar
+    const tabBar = document.getElementById('level-tab-bar');
+    if (tabBar) {
+      tabBar.querySelectorAll('.ls-tab').forEach(btn => {
+        btn.classList.toggle('ls-tab-active', parseInt(btn.dataset.tab) === _activeTab);
+      });
+    }
+
+    grid.innerHTML = '';
+    const start = (_activeTab - 1) * 10 + 1;
+    const end   = start + 9;
+
+    LEVELS.filter(lvl => lvl.id >= start && lvl.id <= end).forEach(lvl => {
       const unlocked = isUnlocked(lvl.id);
       const stars    = getStars(lvl.id);
       const best     = getBestScore(lvl.id);

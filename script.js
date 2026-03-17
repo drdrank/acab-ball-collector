@@ -159,6 +159,21 @@ function _beginRun(levelNum) {
   Game.paused   = false;
   Game.lastTime = performance.now();
   requestAnimationFrame(gameLoop);
+
+  // Pause hint for new players (show first 3 sessions)
+  const sessions = parseInt(localStorage.getItem('acab_sessions') || '0');
+  if (sessions < 3) {
+    localStorage.setItem('acab_sessions', sessions + 1);
+    _showPauseHint();
+  }
+}
+
+function _showPauseHint() {
+  const el = document.createElement('div');
+  el.className = 'pause-hint';
+  el.textContent = 'Tip: Press P or ESC to pause';
+  document.getElementById('score-popup-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
 
 // ============================================================
@@ -273,6 +288,7 @@ function gameLoop(timestamp) {
 
   const dt = Math.min((timestamp - Game.lastTime) / 1000, 0.05);
   Game.lastTime = timestamp;
+  _trackFPS(dt);
 
   update(dt);
   render();
@@ -459,10 +475,10 @@ function getComboMultiplier() {
 function incrementCombo() {
   Game.combo++;
   Game.comboTimer = CONFIG.COMBO_WINDOW;
-  // Milestone audio & popup
-  if (Game.combo === 3) { Audio.play('combo'); showComboAnnounce('🔥 3 COMBO!'); }
-  if (Game.combo === 5) { Audio.play('combo'); showComboAnnounce('🔥🔥 5 COMBO!'); }
-  if (Game.combo === 8) { Audio.play('combo'); showComboAnnounce('💥 8 COMBO! ×3!'); }
+  // Milestone audio, popup & particles
+  if (Game.combo === 3) { Audio.play('combo'); showComboAnnounce('🔥 3 COMBO!'); spawnComboParticles(player.x, player.y, 3); }
+  if (Game.combo === 5) { Audio.play('combo'); showComboAnnounce('🔥🔥 5 COMBO!'); spawnComboParticles(player.x, player.y, 5); }
+  if (Game.combo === 8) { Audio.play('combo'); showComboAnnounce('💥 8 COMBO! ×3!'); spawnComboParticles(player.x, player.y, 8); }
   updateHUD();
 }
 
@@ -575,8 +591,18 @@ function playerHit(hazard) {
 
   Game.lives--;
   Game.livesLostThisLevel++;
+
+  // Score penalty: lose 10% of current score on death
+  const penalty = Math.round(Game.score * 0.10);
+  if (penalty > 0) {
+    Game.score = Math.max(0, Game.score - penalty);
+    showScorePopup(player.x, player.y - 44, `-${penalty} pts`);
+  }
+
   updateHUD();
 
+  // Hit burst particles
+  spawnHitParticles(player.x, player.y);
   showScorePopup(player.x, player.y - 24, '💔 -1 Life');
 
   if (Game.lives <= 0) {
@@ -643,7 +669,7 @@ function levelComplete() {
   // Speed bonus: par time scales with level; bonus up to level×500 pts
   const parTime   = 30 + Game.level * 15;  // level 1 = 45s … level 10 = 180s
   const timePct   = Math.max(0, 1 - Game.levelTimer / parTime);
-  const timeBonus = Math.round(Game.level * 500 * timePct);
+  const timeBonus = Math.round(Game.level * 500 * timePct * (1 + Game.level / 30));
   if (timeBonus > 0) {
     Game.score += timeBonus;
     addToTotalScore(timeBonus);
@@ -656,7 +682,7 @@ function levelComplete() {
   addToTotalScore(Game.score);
 
   // Unlock next level
-  if (Game.level < 10) Progress.unlockLevel(Game.level + 1);
+  if (Game.level < 30) Progress.unlockLevel(Game.level + 1);
 
   // Skin unlocks
   const isComplete   = Game.level === 30;
@@ -682,7 +708,7 @@ function levelComplete() {
   }
 
   const nextBtn = document.getElementById('nextLevelBtn');
-  if (Game.level >= 10) {
+  if (Game.level >= 30) {
     nextBtn.textContent = 'Finish Game 🏆';
     nextBtn.onclick     = gameComplete;
   } else {
@@ -730,7 +756,7 @@ function gameComplete() {
   document.getElementById('complete-score').textContent  = Game.score;
   document.getElementById('complete-tokens').textContent = Game.totalTokens;
   document.getElementById('complete-stars').textContent  = Progress.getTotalStars();
-  checkAndUnlock(10, Game.totalTokens, true);
+  checkAndUnlock(Game.level, Game.totalTokens, true);
   spawnConfetti('confettiContainer2');
   showScreen('screen-complete');
 }
@@ -841,11 +867,25 @@ function render() {
   drawWorldPowerups(ctx, now);
 
   // Hazards
+  const _themeLineColor = (lvl.courtTheme && lvl.courtTheme.lineColor) || null;
   hazards.forEach(h => {
     ctx.save();
     ctx.translate(h.x, h.y);
     const isChasing = (h.ai === 'chase' || h.ai === 'boss') &&
       distTo(h.x, h.y, player.x, player.y) < h.detectionRadius;
+
+    // Threat aura: pulsing red ring when chaser detects player
+    if (isChasing) {
+      const aura = 1 + 0.25 * Math.sin(now * 8);
+      ctx.beginPath();
+      ctx.arc(0, 0, (h.radius + 7) * aura, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,30,30,0.65)';
+      ctx.lineWidth   = 2.5;
+      ctx.shadowColor = '#FF0000';
+      ctx.shadowBlur  = 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
 
     if (h.ai === 'spin' || h.ai === 'boss') {
       drawSpinner(ctx, h, now);
@@ -853,8 +893,9 @@ function render() {
       if (h.ai !== 'static') ctx.rotate(now * (h.ai === 'roller' ? 4 : 2));
       ctx.font          = `${h.radius * 2}px serif`;
       ctx.textAlign     = 'center'; ctx.textBaseline = 'middle';
-      ctx.shadowColor   = isChasing ? '#FF0000' : h.color;
-      ctx.shadowBlur    = isChasing ? 22 : 8;
+      // Court-themed glow when not chasing
+      ctx.shadowColor   = isChasing ? '#FF0000' : (_themeLineColor || h.color);
+      ctx.shadowBlur    = isChasing ? 22 : (_lowQuality ? 4 : 10);
       ctx.fillText(h.emoji, 0, 0);
     }
     ctx.restore();
@@ -1370,10 +1411,64 @@ function drawCourtLines(lvl) {
 }
 
 // ============================================================
+// ADAPTIVE QUALITY
+// ============================================================
+let _fpsHistory = [];
+let _lowQuality = false;
+
+function _trackFPS(dt) {
+  if (dt <= 0) return;
+  _fpsHistory.push(1 / dt);
+  if (_fpsHistory.length > 60) _fpsHistory.shift();
+  if (_fpsHistory.length >= 60) {
+    const avg = _fpsHistory.reduce((a, b) => a + b, 0) / _fpsHistory.length;
+    _lowQuality = avg < 45;
+  }
+}
+
+// ============================================================
 // PARTICLES
 // ============================================================
+function _courtColor() {
+  const lvl = LEVELS[Game.level - 1];
+  return (lvl && lvl.courtTheme && lvl.courtTheme.lineColor) || '#FFD700';
+}
+
+function spawnHitParticles(x, y) {
+  const count = _lowQuality ? 6 : 14;
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.4;
+    const speed = 3 + Math.random() * 4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: i % 2 === 0 ? '#FF3333' : '#FF9900',
+      life: 0.55, maxLife: 0.55,
+      radius: 3 + Math.random() * 3,
+    });
+  }
+}
+
+function spawnComboParticles(x, y, tier) {
+  const count = _lowQuality ? 8 : (tier >= 8 ? 20 : tier >= 5 ? 14 : 10);
+  const color = _courtColor();
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 / count) * i + Math.random() * 0.3;
+    const speed = 2 + Math.random() * (tier >= 8 ? 5 : 3);
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1,
+      color: i % 3 === 0 ? '#FFD700' : color,
+      life: 0.8, maxLife: 0.8,
+      radius: 3 + Math.random() * 4,
+    });
+  }
+}
+
 function spawnPickupParticles(x, y, color) {
-  const count = (typeof MOBILE_CONFIG !== 'undefined' && MOBILE_CONFIG.isMobile) ? 4 : 8;
+  const count = (typeof MOBILE_CONFIG !== 'undefined' && MOBILE_CONFIG.isMobile) ? 4 : (_lowQuality ? 5 : 8);
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 / count) * i;
     particles.push({
@@ -1402,7 +1497,7 @@ function renderParticles() {
     ctx.save();
     ctx.globalAlpha = p.life / p.maxLife;
     ctx.fillStyle   = p.color;
-    ctx.shadowColor = p.color; ctx.shadowBlur = 6;
+    ctx.shadowColor = p.color; ctx.shadowBlur = _lowQuality ? 0 : 6;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
     ctx.fill();

@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>ACAB Ball Collector</title>
   <meta name="name" content="ACAB Ball Collector" />
-  <link rel="stylesheet" href="styles.css?v=8" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
 
@@ -60,6 +60,11 @@
   <div id="screen-levelselect" class="screen">
     <div class="panel wide">
       <h2>Select Level</h2>
+      <div id="level-tab-bar" class="level-tab-bar">
+        <button class="ls-tab ls-tab-active" data-tab="1" onclick="Progress.renderLevelSelect(1)">1–10</button>
+        <button class="ls-tab" data-tab="2" onclick="Progress.renderLevelSelect(2)">11–20</button>
+        <button class="ls-tab" data-tab="3" onclick="Progress.renderLevelSelect(3)">21–30</button>
+      </div>
       <div id="level-select-grid" class="level-select-grid"></div>
       <button class="btn btn-secondary" onclick="showScreen('screen-start')" style="margin-top:1rem">Back</button>
     </div>
@@ -297,29 +302,29 @@
   <script src="https://cdn.jsdelivr.net/npm/algosdk@2.9.0/dist/browser/algosdk.min.js"></script>
 
   <!-- Pera Wallet SDK — self-hosted bundle (sets window.PeraWalletConnect) -->
-  <script src="pera-wallet.js?v=8"></script>
+  <script src="pera-wallet.js?v=9"></script>
 
   <!-- Config & env (no deps) -->
-  <script src="env.js?v=8"></script>
-  <script src="config.js?v=8"></script>
+  <script src="env.js?v=9"></script>
+  <script src="config.js?v=9"></script>
 
   <!-- Core systems -->
-  <script src="audio.js?v=8"></script>
-  <script src="progress.js?v=8"></script>
-  <script src="powerups.js?v=8"></script>
-  <script src="unlocks.js?v=8"></script>
-  <script src="leaderboard.js?v=8"></script>
-  <script src="mobile.js?v=8"></script>
+  <script src="audio.js?v=9"></script>
+  <script src="progress.js?v=9"></script>
+  <script src="powerups.js?v=9"></script>
+  <script src="unlocks.js?v=9"></script>
+  <script src="leaderboard.js?v=9"></script>
+  <script src="mobile.js?v=9"></script>
 
   <!-- Game engine -->
-  <script src="script.js?v=8"></script>
+  <script src="script.js?v=9"></script>
 
   <!-- Online layer (loaded last — patches showScreen) -->
-  <script src="db.js?v=8"></script>
-  <script src="wallet.js?v=8"></script>
-  <script src="online-leaderboard.js?v=8"></script>
+  <script src="db.js?v=9"></script>
+  <script src="wallet.js?v=9"></script>
+  <script src="online-leaderboard.js?v=9"></script>
 
   <!-- Background music -->
-  <script src="music.js?v=8"></script>
+  <script src="music.js?v=9"></script>
 </body>
 </html>

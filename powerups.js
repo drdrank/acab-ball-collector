@@ -8,7 +8,7 @@ const POWERUP_TYPES = {
   shield: { emoji: '🛡️', color: '#4ECDC4', label: 'Shield',      duration: 0  }, // 0 = until-hit
   speed:  { emoji: '⚡',  color: '#FFD700', label: 'Speed Boost', duration: 8  },
   magnet: { emoji: '🧲',  color: '#FF69B4', label: 'Magnet',      duration: 8  },
-  freeze: { emoji: '❄️',  color: '#87CEEB', label: 'Freeze',      duration: 5  },
+  freeze: { emoji: '❄️',  color: '#87CEEB', label: 'Freeze',      duration: 3  },
   double: { emoji: '💎',  color: '#9B59B6', label: '2× Score',    duration: 10 },
 };
 
@@ -77,8 +77,8 @@ function activatePowerup(type) {
   if (type === 'shield') {
     PowerupState.shield = true;
   } else {
-    // Stacking: add time on top of remaining (up to 1.5× duration)
-    PowerupState[type] = Math.min((PowerupState[type] || 0) + def.duration, def.duration * 1.5);
+    // No stacking bonus — just reset to full duration
+    PowerupState[type] = def.duration;
   }
   renderPowerupHUD();
 }
@@ -200,6 +200,8 @@ function renderPowerupHUD() {
     const el  = document.createElement('div');
     el.className = 'powerup-pill';
     el.style.setProperty('--pu-color', def.color);
+    const expiring = e.timer !== null && e.timer < 2.0;
+    if (expiring) el.classList.add('pu-expiring');
     el.innerHTML = `
       <span class="pu-icon">${def.emoji}</span>
       <div class="pu-bar"><div class="pu-fill" style="width:${pct}%; background:${def.color}"></div></div>
