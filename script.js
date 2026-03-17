@@ -78,7 +78,7 @@ function preloadBallImages() {
   });
 
   _courtLogoImg = new Image();
-  _courtLogoImg.src = 'acab_logo.svg';
+  _courtLogoImg.src = 'acab_field_logo.png';
 }
 
 document.addEventListener('DOMContentLoaded', preloadBallImages);
@@ -1246,10 +1246,12 @@ function drawCourtLines(lvl) {
 
   // ── ACAB logo at centre court ────────────────────────────────
   if (_courtLogoImg && _courtLogoImg.complete && _courtLogoImg.naturalWidth > 0) {
-    const logoW = 280;
-    const logoH = logoW * (136.59 / 440.51);
+    const logoW = 320;
+    const logoH = logoW * (_courtLogoImg.naturalHeight / _courtLogoImg.naturalWidth);
     ctx.save();
-    ctx.globalAlpha = 0.13;
+    ctx.globalAlpha = 0.22;
+    ctx.filter = 'invert(1)';
+    ctx.globalCompositeOperation = 'screen';
     ctx.drawImage(_courtLogoImg, cx - logoW / 2, cy - logoH / 2, logoW, logoH);
     ctx.restore();
   }
