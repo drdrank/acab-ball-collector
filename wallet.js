@@ -84,13 +84,22 @@ function handleConnectWalletClick() {
   });
   obs.observe(document.body, { childList: true });
 
+  // Timeout: if no modal appears within 12 s the bridge is unreachable
+  const timeoutId = setTimeout(() => {
+    btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
+    _showError('Connection timed out. Make sure Pera Wallet is installed and try again.');
+    obs.disconnect();
+  }, 12000);
+
   pw.connect()
     .then((newAccounts) => {
+      clearTimeout(timeoutId);
       pw.connector?.on('disconnect', handleDisconnectWalletClick);
       console.log('[Wallet] platform:', pw.platform);
       _setAccountAddress(newAccounts[0]);
     })
     .catch((error) => {
+      clearTimeout(timeoutId);
       btns.forEach(b => { b.textContent = '🔗 Connect Wallet'; b.disabled = false; });
       // CONNECT_MODAL_CLOSED = user dismissed on purpose, not an error
       if (error?.data?.type !== 'CONNECT_MODAL_CLOSED') {
@@ -98,7 +107,7 @@ function handleConnectWalletClick() {
         console.log('[Wallet] connect error:', error);
       }
     })
-    .finally(() => obs.disconnect());
+    .finally(() => { clearTimeout(timeoutId); obs.disconnect(); });
 }
 
 // ============================================================
