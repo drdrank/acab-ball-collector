@@ -111,10 +111,11 @@ const DB = (() => {
     }
 
     try {
-      // 1. Get suggested params
-      const pResp = await fetch(`${ALGOD}/v2/transactions/params`);
-      if (!pResp.ok) throw new Error('Could not fetch tx params');
-      const p = await pResp.json();
+      // 1. Get suggested params via algosdk client (returns proper SuggestedParams object)
+      const algodClient = new algosdk.Algodv2('', ALGOD, '');
+      const suggestedParams = await algodClient.getTransactionParams().do();
+      suggestedParams.fee     = 1000;
+      suggestedParams.flatFee = true;
 
       // 2. Build note
       const noteObj = {
@@ -132,14 +133,7 @@ const DB = (() => {
         to:   wallet,
         amount: 0,
         note:   noteBytes,
-        suggestedParams: {
-          fee:        1000,
-          flatFee:    true,
-          firstRound: p['last-round'],
-          lastRound:  p['last-round'] + 1000,
-          genesisID:  p['genesis-id'],
-          genesisHash: p['genesis-hash'],
-        },
+        suggestedParams,
       });
 
       // 4. Sign with Pera Wallet (opens Pera sign modal)
