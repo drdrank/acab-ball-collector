@@ -60,6 +60,26 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.key] = false; });
 
 // ============================================================
+// BALL IMAGE PRELOADER  (FUTURE_ASSETS)
+// ============================================================
+const BALL_IMAGES = {};
+
+function preloadBallImages() {
+  const srcs = new Set();
+  Object.values(CONFIG.COLLECTIBLES).forEach(def => { if (def.img) srcs.add(def.img); });
+  if (typeof BALL_SKINS !== 'undefined') {
+    BALL_SKINS.forEach(skin => { if (skin.img) srcs.add(skin.img); });
+  }
+  srcs.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    BALL_IMAGES[src] = img;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', preloadBallImages);
+
+// ============================================================
 // PLAYER
 // ============================================================
 const player = {
@@ -800,10 +820,16 @@ function render() {
     const pulse = 1 + 0.1 * Math.sin(now * 3 + c.pulse);
     ctx.save();
     ctx.translate(c.x, c.y); ctx.scale(pulse, pulse);
-    ctx.font = `${c.radius * 2}px serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.shadowColor = c.color; ctx.shadowBlur = 10;
-    ctx.fillText(c.emoji, 0, 0);
+    const ballImg = c.img && BALL_IMAGES[c.img];
+    if (ballImg && ballImg.complete && ballImg.naturalWidth > 0) {
+      const sz = c.radius * 2;
+      ctx.drawImage(ballImg, -sz / 2, -sz / 2, sz, sz);
+    } else {
+      ctx.font = `${c.radius * 2}px serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(c.emoji, 0, 0);
+    }
     ctx.restore();
   });
 
@@ -995,9 +1021,15 @@ function drawPlayer(now) {
     ctx.shadowColor = skin.color; ctx.shadowBlur = 18;
   }
 
-  ctx.font = `${player.radius * 2.2}px serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(skin.emoji, 0, 0);
+  const skinImg = skin.img && BALL_IMAGES[skin.img];
+  if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
+    const sz = player.radius * 2.2;
+    ctx.drawImage(skinImg, -sz / 2, -sz / 2, sz, sz);
+  } else {
+    ctx.font = `${player.radius * 2.2}px serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(skin.emoji, 0, 0);
+  }
 
   // Direction dot
   ctx.fillStyle = 'rgba(255,255,255,0.8)';

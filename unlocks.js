@@ -6,68 +6,74 @@
 
 const BALL_SKINS = [
   {
-    id: 'classic', name: 'Classic',
-    emoji: '🏀', color: '#E87722',
+    id: 'classic', name: 'Basketball',
+    emoji: '🏀', img: 'balls/basketball.png', color: '#E87722',
     description: 'The OG orange ball.',
     unlockType: 'default', unlockValue: 0,
   },
   {
-    id: 'tennis', name: 'Neon Tennis',
-    emoji: '🎾', color: '#CCDD00',
+    id: 'tennis', name: 'Tennis Ball',
+    emoji: '🎾', img: 'balls/tennisball.png', color: '#CCDD00',
     description: 'Fast and fuzzy.',
     unlockType: 'level', unlockValue: 2,
   },
   {
     id: 'smile', name: 'Smile Ball',
-    emoji: '😊', color: '#FFD700',
+    emoji: '😊', img: 'balls/smileball.png', color: '#FFD700',
     description: 'Keep smiling.',
     unlockType: 'tokens', unlockValue: 10,
   },
   {
-    id: 'blue', name: 'Blue Court',
-    emoji: '🔵', color: '#1565C0',
-    description: 'Indoor court vibes.',
+    id: 'blue', name: 'Blue Ball',
+    emoji: '🔵', img: 'balls/blueball.png', color: '#1565C0',
+    description: 'Chill court vibes.',
     unlockType: 'level', unlockValue: 4,
   },
   {
-    id: 'gold', name: 'Gold Baseball',
-    emoji: '⭐', color: '#FFD700',
-    description: 'All that glitters.',
+    id: 'softball', name: 'Softball',
+    emoji: '🥎', img: 'balls/softball.png', color: '#F0E060',
+    description: 'The golden stitch.',
     unlockType: 'tokens', unlockValue: 25,
   },
   {
-    id: 'neon', name: 'Neon Glow',
-    emoji: '💚', color: '#00FF88',
-    description: 'Night court energy.',
+    id: 'soccer', name: 'Soccer Ball',
+    emoji: '⚽', img: 'balls/soccerball.png', color: '#222222',
+    description: 'World game energy.',
     unlockType: 'level', unlockValue: 6,
   },
   {
-    id: 'graffiti', name: 'Graffiti Ball',
-    emoji: '🎨', color: '#FF66CC',
-    description: 'Street art drip.',
-    unlockType: 'stars', unlockValue: 9,  // 9 total stars
+    id: 'football', name: 'Football',
+    emoji: '🏈', img: 'balls/football.png', color: '#8B4513',
+    description: 'Touchdown drip.',
+    unlockType: 'stars', unlockValue: 9,
   },
   {
-    id: 'rainbow', name: 'Rainbow',
-    emoji: '🌈', color: '#FF66CC',
-    description: 'All courts are beautiful.',
+    id: 'volleyball', name: 'Volleyball',
+    emoji: '🏐', img: 'balls/volleyball.png', color: '#3399FF',
+    description: 'Beach ready.',
     unlockType: 'tokens', unlockValue: 50,
   },
   {
-    id: 'fire', name: 'Fire Ball',
-    emoji: '🔥', color: '#FF3300',
-    description: 'Too hot to handle.',
+    id: 'baseball', name: 'Baseball',
+    emoji: '⚾', img: 'balls/baseball.png', color: '#FFFFFF',
+    description: 'Play ball.',
     unlockType: 'level', unlockValue: 8,
   },
   {
-    id: 'crown', name: 'Crown Ball',
-    emoji: '👑', color: '#FFD700',
-    description: 'Champions only.',
-    unlockType: 'score', unlockValue: 5000, // total score milestone
+    id: 'golf', name: 'Golf Ball',
+    emoji: '⛳', img: 'balls/golfball.png', color: '#F8F8F8',
+    description: 'Hole in one.',
+    unlockType: 'score', unlockValue: 5000,
   },
   {
-    id: 'acab', name: 'ACAB Legend',
-    emoji: '🏆', color: '#7C4DFF',
+    id: 'crown', name: 'Crown Ball',
+    emoji: '👑', img: 'balls/crown_ball.png', color: '#FFD700',
+    description: 'Champions only.',
+    unlockType: 'stars', unlockValue: 24,
+  },
+  {
+    id: 'acab', name: 'ACAB Ball',
+    emoji: '🏆', img: 'balls/acab_ball.png', color: '#7C4DFF',
     description: 'Complete all 10 levels.',
     unlockType: 'complete', unlockValue: 10,
   },
@@ -163,8 +169,12 @@ function renderUnlocksScreen() {
       if (skin.unlockType === 'complete') lockLabel = 'Complete all 10 levels';
     }
 
+    const ballDisplay = unlocked && skin.img
+      ? `<img src="${skin.img}" class="skin-img" alt="${skin.name}" />`
+      : `<div class="skin-emoji">${unlocked ? skin.emoji : '🔒'}</div>`;
+
     card.innerHTML = `
-      <div class="skin-emoji">${unlocked ? skin.emoji : '🔒'}</div>
+      ${ballDisplay}
       <div class="skin-name">${skin.name}</div>
       <div class="skin-desc">${unlocked ? skin.description : lockLabel}</div>
       ${unlocked && !equipped ? `<button class="btn btn-sm" onclick="handleEquip('${skin.id}')">Equip</button>` : ''}
@@ -181,5 +191,5 @@ function handleEquip(id) {
   const el   = document.getElementById('hud-ball-val');
   if (el) el.textContent = skin.name;
   const msg = document.getElementById('equip-msg');
-  if (msg) msg.textContent = `Equipped: ${skin.name} ${skin.emoji}`;
+  if (msg) msg.textContent = `Equipped: ${skin.name}`;
 }

@@ -40,20 +40,20 @@ const CONFIG = {
     soccer:     12,
     volleyball: 18,
     football:   22,
-    bowling:    28,
+    softball:   28,
     smile:       5,
   },
 
   // ---- Collectibles ----
   COLLECTIBLES: {
-    basketball: { emoji: '🏀', radius: 12, color: '#E87722', points: 30 },
-    tennis:     { emoji: '🎾', radius: 10, color: '#CCDD00', points: 15 },
-    baseball:   { emoji: '⚾', radius: 10, color: '#FFFFFF', points: 20 },
-    soccer:     { emoji: '⚽', radius: 11, color: '#222222', points: 12 },
-    volleyball: { emoji: '🏐', radius: 11, color: '#3399FF', points: 18 },
-    football:   { emoji: '🏈', radius: 11, color: '#8B4513', points: 22 },
-    bowling:    { emoji: '🎳', radius: 12, color: '#000066', points: 28 },
-    smile:      { emoji: '😊', radius: 11, color: '#FFD700', points: 5  },
+    basketball: { emoji: '🏀', img: 'balls/basketball.png', radius: 12, color: '#E87722', points: 30 },
+    tennis:     { emoji: '🎾', img: 'balls/tennisball.png', radius: 10, color: '#CCDD00', points: 15 },
+    baseball:   { emoji: '⚾', img: 'balls/baseball.png',   radius: 10, color: '#FFFFFF', points: 20 },
+    soccer:     { emoji: '⚽', img: 'balls/soccerball.png', radius: 11, color: '#222222', points: 12 },
+    volleyball: { emoji: '🏐', img: 'balls/volleyball.png', radius: 11, color: '#3399FF', points: 18 },
+    football:   { emoji: '🏈', img: 'balls/football.png',   radius: 11, color: '#8B4513', points: 22 },
+    softball:   { emoji: '🥎', img: 'balls/softball.png',   radius: 12, color: '#F0E060', points: 28 },
+    smile:      { emoji: '😊', img: 'balls/smileball.png',  radius: 11, color: '#FFD700', points: 5  },
   },
 
   // ---- Hazard types ----
@@ -226,7 +226,7 @@ const LEVELS = [
   {
     id: 6, name: 'Park Loop', theme: '2 chasers, 2 spinners, double checkpoint',
     targetScore: 600, targetSmiles: 6,
-    ballCounts: { basketball: 5, tennis: 6, baseball: 5, soccer: 5, volleyball: 4, football: 4, bowling: 2, smile: 9 },
+    ballCounts: { basketball: 5, tennis: 6, baseball: 5, soccer: 5, volleyball: 4, football: 4, softball: 2, smile: 9 },
     hazards: [
       { type: 'cone',    x: 150, y: 200, dx:  2.0, dy:  0.5 },
       { type: 'cone',    x: 550, y: 300, dx: -1.5, dy:  1.0 },
@@ -257,7 +257,7 @@ const LEVELS = [
   {
     id: 7, name: 'Sunset Street', theme: 'Maze layout, roller enemies debut',
     targetScore: 760, targetSmiles: 7,
-    ballCounts: { basketball: 6, tennis: 7, baseball: 5, soccer: 5, volleyball: 5, football: 4, bowling: 3, smile: 10 },
+    ballCounts: { basketball: 6, tennis: 7, baseball: 5, soccer: 5, volleyball: 5, football: 4, softball: 3, smile: 10 },
     hazards: [
       { type: 'cone',   x: 200, y: 200, dx:  2.2, dy:  0   },
       { type: 'roller', x: 500, y: 300, dx:  2.8, dy:  1.2 },
@@ -296,7 +296,7 @@ const LEVELS = [
   {
     id: 8, name: 'Rooftop Play Zone', theme: '⚠️ Boss Rush — a giant hunter patrols the roof',
     targetScore: 940, targetSmiles: 7,
-    ballCounts: { basketball: 6, tennis: 7, baseball: 6, soccer: 6, volleyball: 5, football: 5, bowling: 4, smile: 10 },
+    ballCounts: { basketball: 6, tennis: 7, baseball: 6, soccer: 6, volleyball: 5, football: 5, softball: 4, smile: 10 },
     hazards: [
       { type: 'boss',   x: 400, y: 280, dx:  0,   dy:  0   }, // ← MINI-BOSS
       { type: 'cone',   x: 150, y: 150, dx:  2.5, dy:  1.0 },
@@ -331,7 +331,7 @@ const LEVELS = [
   {
     id: 9, name: 'Neon Court', theme: 'Multiple bosses + deep corridors',
     targetScore: 1150, targetSmiles: 8,
-    ballCounts: { basketball: 7, tennis: 8, baseball: 6, soccer: 6, volleyball: 6, football: 5, bowling: 4, smile: 12 },
+    ballCounts: { basketball: 7, tennis: 8, baseball: 6, soccer: 6, volleyball: 6, football: 5, softball: 4, smile: 12 },
     hazards: [
       { type: 'boss',    x: 400, y: 280, dx:  0,   dy:  0   },
       { type: 'cone',    x: 150, y: 120, dx:  2.8, dy:  0   },
@@ -368,7 +368,7 @@ const LEVELS = [
   {
     id: 10, name: 'Championship Playground', theme: '🏆 All Courts Are Beautiful — ultimate challenge',
     targetScore: 1400, targetSmiles: 10,
-    ballCounts: { basketball: 8, tennis: 8, baseball: 7, soccer: 7, volleyball: 6, football: 6, bowling: 5, smile: 15 },
+    ballCounts: { basketball: 8, tennis: 8, baseball: 7, soccer: 7, volleyball: 6, football: 6, softball: 5, smile: 15 },
     hazards: [
       { type: 'boss',    x: 250, y: 200, dx:  0,   dy:  0   },
       { type: 'boss',    x: 550, y: 380, dx:  0,   dy:  0   },
