@@ -63,6 +63,7 @@ document.addEventListener('keyup', e => { keys[e.key] = false; });
 // BALL IMAGE PRELOADER  (FUTURE_ASSETS)
 // ============================================================
 const BALL_IMAGES = {};
+let _courtLogoImg = null;
 
 function preloadBallImages() {
   const srcs = new Set();
@@ -75,6 +76,9 @@ function preloadBallImages() {
     img.src = src;
     BALL_IMAGES[src] = img;
   });
+
+  _courtLogoImg = new Image();
+  _courtLogoImg.src = 'acab_logo.svg';
 }
 
 document.addEventListener('DOMContentLoaded', preloadBallImages);
@@ -655,7 +659,7 @@ function levelComplete() {
   if (Game.level < 10) Progress.unlockLevel(Game.level + 1);
 
   // Skin unlocks
-  const isComplete   = Game.level === 20;
+  const isComplete   = Game.level === 30;
   const newUnlocks   = checkAndUnlock(Game.level, Game.totalTokens, isComplete);
   const unlockMsg    = newUnlocks.length
     ? `🎁 Unlocked: ${newUnlocks.map(u => u.name + ' ' + u.emoji).join(', ')}!`
@@ -699,7 +703,7 @@ function calculateStars() {
 }
 
 function nextLevel() {
-  if (Game.level >= 20) { gameComplete(); return; }
+  if (Game.level >= 30) { gameComplete(); return; }
   levelCompleteTriggered = false;
   Game.level++;
   loadLevel(Game.level);
@@ -1238,6 +1242,16 @@ function drawCourtLines(lvl) {
     // Fallback hardwood
     ctx.fillStyle = '#A0611A';
     ctx.fillRect(0, 0, W, H);
+  }
+
+  // ── ACAB logo at centre court ────────────────────────────────
+  if (_courtLogoImg && _courtLogoImg.complete && _courtLogoImg.naturalWidth > 0) {
+    const logoW = 280;
+    const logoH = logoW * (136.59 / 440.51);
+    ctx.save();
+    ctx.globalAlpha = 0.13;
+    ctx.drawImage(_courtLogoImg, cx - logoW / 2, cy - logoH / 2, logoW, logoH);
+    ctx.restore();
   }
 
   // ── Paint areas (key / lane) ─────────────────────────────────
