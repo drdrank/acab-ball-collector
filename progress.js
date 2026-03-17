@@ -83,11 +83,13 @@ const Progress = (() => {
       card.className = `level-card ${unlocked ? 'lc-unlocked' : 'lc-locked'} lc-court-${lvl.id}`;
       card.innerHTML = `
         <div class="lc-court-icon">${ct.icon || ''}</div>
-        <div class="lc-num">${lvl.id}</div>
-        <div class="lc-name">${unlocked ? lvl.name : '???'}</div>
-        <div class="lc-stars">${starStr}</div>
-        ${best > 0 ? `<div class="lc-best">Best: ${best}</div>` : ''}
-        ${!unlocked ? '<div class="lc-lock">🔒</div>' : ''}
+        <div class="lc-content">
+          <div class="lc-num">${lvl.id}</div>
+          <div class="lc-name">${unlocked ? lvl.name : '???'}</div>
+          <div class="lc-stars">${starStr}</div>
+          ${best > 0 ? `<div class="lc-best">Best: ${best}</div>` : ''}
+          ${!unlocked ? '<div class="lc-lock">🔒</div>' : ''}
+        </div>
       `;
       if (unlocked) card.onclick = () => startLevelFromSelect(lvl.id);
       grid.appendChild(card);

@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>ACAB Ball Collector</title>
   <meta name="name" content="ACAB Ball Collector" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
 
@@ -74,7 +74,7 @@
         <div class="howto-item"><span class="icon">🎾</span><p>Collect <b>tennis balls</b> for medium points</p></div>
         <div class="howto-item"><span class="icon">⚾</span><p>Collect <b>baseballs</b> for medium-high points</p></div>
         <div class="howto-item"><span class="icon">😊</span><p><b>Smile tokens</b> = progression + 2-star rating</p></div>
-        <div class="howto-item"><span class="icon">🚪</span><p>Reach the <b>exit gate</b> after all goals are met</p></div>
+        <div class="howto-item"><span class="icon">🪣</span><p>Reach the <b>bucket</b> after all goals are met</p></div>
         <div class="howto-item"><span class="icon">⭐</span><p>Touch <b>checkpoints</b> to save your respawn spot</p></div>
         <div class="howto-item"><span class="icon">🛡️</span><p><b>Power-ups</b> spawn each level — grab them!</p></div>
         <div class="howto-item"><span class="icon">👿</span><p><b>Chasers</b> hunt you when you get close — run!</p></div>
@@ -293,27 +293,27 @@
   <!-- CDN: Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
-  <!-- Pera Wallet SDK — self-hosted bundle (sets window.__PeraPkg) -->
-  <script src="pera-wallet.js"></script>
+  <!-- Pera Wallet SDK — self-hosted bundle (sets window.PeraWalletConnect) -->
+  <script src="pera-wallet.js?v=3"></script>
 
   <!-- Config & env (no deps) -->
-  <script src="env.js"></script>
-  <script src="config.js"></script>
+  <script src="env.js?v=3"></script>
+  <script src="config.js?v=3"></script>
 
   <!-- Core systems -->
-  <script src="audio.js"></script>
-  <script src="progress.js"></script>
-  <script src="powerups.js"></script>
-  <script src="unlocks.js"></script>
-  <script src="leaderboard.js"></script>
-  <script src="mobile.js"></script>
+  <script src="audio.js?v=3"></script>
+  <script src="progress.js?v=3"></script>
+  <script src="powerups.js?v=3"></script>
+  <script src="unlocks.js?v=3"></script>
+  <script src="leaderboard.js?v=3"></script>
+  <script src="mobile.js?v=3"></script>
 
   <!-- Game engine -->
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 
   <!-- Online layer (loaded last — patches showScreen) -->
-  <script src="db.js"></script>
-  <script src="wallet.js"></script>
-  <script src="online-leaderboard.js"></script>
+  <script src="db.js?v=3"></script>
+  <script src="wallet.js?v=3"></script>
+  <script src="online-leaderboard.js?v=3"></script>
 </body>
 </html>
