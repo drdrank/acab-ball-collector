@@ -133,11 +133,11 @@ const DB = (() => {
         amount: 0,
         note:   noteBytes,
         suggestedParams: {
-          fee:         1000,
-          flatFee:     true,
-          firstValid:  p['last-round'],
-          lastValid:   p['last-round'] + 1000,
-          genesisID:   p['genesis-id'],
+          fee:        1000,
+          flatFee:    true,
+          firstRound: p['last-round'],
+          lastRound:  p['last-round'] + 1000,
+          genesisID:  p['genesis-id'],
           genesisHash: p['genesis-hash'],
         },
       });
